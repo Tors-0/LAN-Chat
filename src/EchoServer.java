@@ -12,18 +12,38 @@ public class EchoServer {
     private BufferedReader in;
     public void start(int port) throws IOException {
         serverSocket = new ServerSocket(port);
-        clientSocket = serverSocket.accept();
-        out = new PrintWriter(clientSocket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        String msg = "";
-        while (msg != null) {
-            msg = in.readLine();
-            out.println(msg);
-            System.out.println("got msg from client: " + msg);
-            if (msg.equals("stop")) {
-                stop();
-                break;
-            }
+        System.out.println("Server started on port " + port);
+        int currentClient = 0;
+        while (true) {
+            clientSocket = serverSocket.accept();
+            int finalCurrentClient = currentClient;
+            new Thread(() -> {
+                try {
+                    in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                    out = new PrintWriter(clientSocket.getOutputStream(), true);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                String msg = "";
+                while (msg != null) {
+                    try {
+                        msg = in.readLine();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    out.println(msg);
+                    System.out.printf("got msg from client %s: %s%n", finalCurrentClient, msg);
+                    if (msg.equals("stop")) {
+                        try {
+                            stop();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                }
+            }).start();
+            currentClient++;
         }
     }
     public void stop() throws IOException {
@@ -34,8 +54,13 @@ public class EchoServer {
     }
     public static void main(String[] args) {
         EchoServer server = new EchoServer();
+        if (args.length < 1) {
+            System.out.println("No argument given, exiting...");
+            System.exit(1);
+        }
+        int port = Integer.parseInt(args[0]);
         try {
-            server.start(6666);
+            server.start(port);
         } catch (Exception e) {
             System.out.println("internal server error: " + e.getMessage());
         }

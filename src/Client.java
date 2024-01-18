@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.util.Scanner;
 
 public class Client {
@@ -33,7 +34,11 @@ public class Client {
     public static void sendToServer(String msg) {
         try {
             String resp = myNetCon.sendMsg(msg);
-            System.out.println("got response: " + resp);
+            if (resp == null) {
+                System.out.println("no server response");
+            } else {
+                System.out.println("got response: " + resp);
+            }
         } catch (Exception e) {
             System.out.println("got exception: " + e.getMessage());
         }
