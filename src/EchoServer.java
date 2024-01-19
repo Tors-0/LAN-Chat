@@ -22,7 +22,7 @@ public class EchoServer {
             currentClient++;
         }
     }
-    public void removeClient(EchoClientHandler client) {
+    private void removeClient(EchoClientHandler client) {
         clientHandlers.remove(client);
     }
     public synchronized void distributeMsg(String msg) {
@@ -56,7 +56,7 @@ public class EchoServer {
         }
         public void run() {
             try {
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()), 512);
                 out = new PrintWriter(clientSocket.getOutputStream(), true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -74,7 +74,7 @@ public class EchoServer {
                     msg = "client " + clientID + ": " + msg;
                     server.distributeMsg(msg);
                 } else {
-                    msg = String.format("client %s: disconnected%n", clientID);
+                    msg = String.format("client %s disconnected%n", clientID);
                     System.out.printf(msg);
                     server.distributeMsg(msg);
                     break;
