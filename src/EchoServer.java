@@ -75,7 +75,7 @@ public class EchoServer {
                     server.distributeMsg(msg);
                 } else {
                     msg = String.format("client %s disconnected%n", clientID);
-                    System.out.printf(msg);
+                    System.out.print(msg);
                     server.distributeMsg(msg);
                     break;
                 }
