@@ -43,6 +43,7 @@ public class Networking implements Closeable {
                 if (msg != null && !msg.isEmpty()) {
                     System.out.println("\r" + msg.replace("\n","") + "     ");
                     System.out.print("Send a message: ");
+                    Client.addText(msg);
                 }
             }
         }

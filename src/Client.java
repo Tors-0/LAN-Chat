@@ -12,6 +12,7 @@ public class Client implements Closeable {
     static JFrame frame;
     static JTextField textField;
     static JLabel label;
+    static JTextArea textArea;
 
     public static void main(String[] args) {
         myNetCon = new Networking();
@@ -28,22 +29,34 @@ public class Client implements Closeable {
         }
 
         windowInit();
-
-        clientLoop();
     }
 
     private static void windowInit() {
         frame = new JFrame("ChatClient");
-        frame.setSize(500,250);
-        frame.setMinimumSize(new Dimension(500,250));
+        frame.setSize(600,450);
+        frame.setMinimumSize(new Dimension(600,450));
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
         textField = new JTextField(60);
-        label = new JLabel();
-        frame.add(label);
-        frame.add(textField);
-        frame.setVisible(true);
         textField.setVisible(true);
-        label.setVisible(true);
-        label.setSize(500,230);
+
+        textArea = new JTextArea("",25,60);
+        textArea.append("ChatClient window open...");
+        textArea.setVisible(true);
+        textArea.setSize(500,230);
+        textArea.setLineWrap(true);
+
+        Container contentPane = frame.getContentPane();
+        JPanel chatPane = new JPanel();
+        chatPane.setLayout(new BoxLayout(chatPane,BoxLayout.Y_AXIS));
+
+        chatPane.add(textArea);
+        chatPane.add(Box.createRigidArea(new Dimension(0,5)));
+        chatPane.add(textField);
+
+        contentPane.add(chatPane, BorderLayout.NORTH);
+        frame.setVisible(true);
+
         Action action = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -60,19 +73,8 @@ public class Client implements Closeable {
     }
 
     public static void addText(String txt) {
-        label.setText(label.getText() + txt);
-    }
-    private static void clientLoop() {
-        System.out.print("Send a message: ");
-        String userInput = scanner.nextLine();
-        while (true) {
-            if (userInput.contains("stop")) {
-                System.out.println("stopping client...");
-                System.exit(0);
-            }
-            sendToServer(userInput);
-            System.out.print("Send a message: ");
-            userInput = scanner.nextLine();
+        if (textArea != null) {
+            textArea.append("\n" + txt);
         }
     }
 
@@ -80,7 +82,7 @@ public class Client implements Closeable {
         try {
             myNetCon.sendMsg(msg);
         } catch (Exception e) {
-            System.out.println("got exception: " + e.getMessage());
+            System.out.println("sTS(String) got exception: " + e.getMessage());
         }
     }
 

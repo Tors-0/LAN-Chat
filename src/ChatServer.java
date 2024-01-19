@@ -6,10 +6,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
-public class EchoServer {
+public class ChatServer {
     private ServerSocket serverSocket;
     private final ArrayList<EchoClientHandler> clientHandlers = new ArrayList<>();
-    static EchoServer server = new EchoServer();
+    static ChatServer server = new ChatServer();
     public void start(int port) throws IOException {
         serverSocket = new ServerSocket(port);
         System.out.println("Server started on port " + port);
@@ -65,7 +65,7 @@ public class EchoServer {
                 try {
                     msg = in.readLine();
                 } catch (IOException e) {
-                    // exception can happen here when client disconnects
+                    throw new RuntimeException(e);
                 }
 
                 if (msg != null) {
@@ -79,7 +79,7 @@ public class EchoServer {
                     break;
                 }
             }
-            EchoServer.server.removeClient(this);
+            ChatServer.server.removeClient(this);
             try {
                 in.close();
                 out.close();
