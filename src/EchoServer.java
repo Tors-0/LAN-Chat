@@ -46,7 +46,7 @@ public class EchoServer {
         }
     }
     private static class EchoClientHandler extends Thread {
-        private Socket clientSocket;
+        private final Socket clientSocket;
         private PrintWriter out;
         private BufferedReader in;
         private final int clientID;

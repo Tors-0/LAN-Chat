@@ -1,6 +1,5 @@
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.util.Scanner;
 
 public class Client implements Closeable {

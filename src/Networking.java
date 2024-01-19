@@ -1,6 +1,4 @@
 import java.io.*;
-import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Networking implements Closeable {
@@ -42,7 +40,7 @@ public class Networking implements Closeable {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                if (msg != null && !msg.isBlank()) {
+                if (msg != null && !msg.isEmpty()) {
                     System.out.println("\r" + msg.replace("\n","") + "     ");
                     System.out.print("Send a message: ");
                 }
