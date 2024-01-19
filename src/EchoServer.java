@@ -1,11 +1,10 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
 
 public class EchoServer {
     private ServerSocket serverSocket;
@@ -66,7 +65,7 @@ public class EchoServer {
                 try {
                     msg = in.readLine();
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    // exception can happen here when client disconnects
                 }
 
                 if (msg != null) {
