@@ -14,16 +14,39 @@ public class Networking implements Closeable {
         socket = new Socket(ip, port);
         out = new PrintWriter(socket.getOutputStream(), true);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        new PrintInputStream(in).start();
     }
-    public String sendMsg(String msg) throws IOException {
+    public void sendMsg(String msg) throws IOException {
         out.println(msg);
-        return in.readLine();
     }
-
+    public BufferedReader getReader() {
+        return in;
+    }
     @Override
     public void close() throws IOException {
         in.close();
         out.close();
         socket.close();
+    }
+    private static class PrintInputStream extends Thread {
+        BufferedReader in;
+        public PrintInputStream(BufferedReader in) {
+            this.in = in;
+            System.out.println("now receiving messages from server...");
+        }
+        public void run() {
+            String msg = "";
+            while (msg != null) {
+                try {
+                    msg = in.readLine();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                if (msg != null && !msg.isBlank()) {
+                    System.out.println("\r" + msg.replace("\n","") + "     ");
+                    System.out.print("Send a message: ");
+                }
+            }
+        }
     }
 }
