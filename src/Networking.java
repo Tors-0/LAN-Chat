@@ -5,6 +5,7 @@ public class Networking implements Closeable {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
+    private Thread worker;
 
     public Networking() {
     }
@@ -12,31 +13,32 @@ public class Networking implements Closeable {
         socket = new Socket(ip, port);
         out = new PrintWriter(socket.getOutputStream(), true);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        new PrintInputStream(in).start();
+        worker = new PrintInputStream(in);
+        worker.start();
     }
     public void sendMsg(String msg) throws IOException {
         out.println(msg);
     }
     @Override
     public void close() throws IOException {
-        in.close();
-        out.close();
+        worker.interrupt();
+        worker = null;
         socket.close();
+        out.close();
+        in.close();
     }
     private static class PrintInputStream extends Thread {
         BufferedReader in;
         public PrintInputStream(BufferedReader in) {
             this.in = in;
-            System.out.println("now receiving messages from server...");
         }
         public void run() {
             String msg = "";
             while (msg != null) {
+                if (interrupted()) break;
                 try {
                     msg = in.readLine();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                } catch (IOException ignored) {}
                 if (msg != null && !msg.isEmpty()) {
                     Client.addText(msg);
                     if ("Server closed...".equals(msg)) {
