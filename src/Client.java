@@ -18,12 +18,15 @@ public class Client implements Closeable {
     static JLabel hostLabel;
     static JTextField hostField;
     static JButton connectButton;
+    static final String    CONNECT = "Join";
+    static final String DISCONNECT = "Exit";
     static JTextArea textArea;
     static JScrollPane scrollableTextArea;
     static JPanel chatPane;
     static JPanel configPane;
 
     static boolean connected = false;
+    static final int timeout = 3000;
 
     public static void main(String[] args) {
         myNetCon = new Networking();
@@ -41,6 +44,8 @@ public class Client implements Closeable {
         textArea.setSize(500,230);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
+        textArea.setForeground(Color.white);
+        textArea.setBackground(Color.gray);
         textArea.setVisible(true);
 
         scrollableTextArea = new ModernScrollPane(textArea);
@@ -82,7 +87,7 @@ public class Client implements Closeable {
         hostField = new JTextField(25);
         hostField.setCaretColor(Color.white);
 
-        connectButton = new JButton("Connect");
+        connectButton = new JButton(CONNECT);
 
         configPane = new JPanel();
         configPane.setLayout(new BoxLayout(configPane,BoxLayout.X_AXIS));
@@ -119,7 +124,7 @@ public class Client implements Closeable {
             public void actionPerformed(ActionEvent e) {
                 String text = msgField.getText();
                 msgField.setText("");
-                if (text.contains("stop")) {
+                if ("stop".equals(text)) {
                     System.out.println("stopping client...");
                     System.exit(0);
                 }
@@ -150,15 +155,35 @@ public class Client implements Closeable {
         };
         hostField.addActionListener(hostAction);
         Action connectAction = new AbstractAction() {
+            long nextAvailableTimeMillis = System.currentTimeMillis() + timeout;
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (hostname == null || hostname.isEmpty() || port < 1 || connected) return;
-                try {
-                    myNetCon.startConnection(hostname,port);
-                    connectButton.setEnabled(false);
-                    addText("Connected to " + hostname + " on port " + port);
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(frame,ex.toString(),"Connect Failed",JOptionPane.ERROR_MESSAGE);
+                if (connected) {
+                    try {
+                        myNetCon.close();
+                        connectButton.setText(CONNECT);
+                        textArea.setText("Disconnected from " + hostname);
+                        connected = false;
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(frame,ex.toString(),"Disconnect Error",JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    if (nextAvailableTimeMillis > System.currentTimeMillis()) {
+                        JOptionPane.showMessageDialog(frame,"Please wait " + (nextAvailableTimeMillis-System.currentTimeMillis()) + "ms before connecting again","Timed Out!",JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    nextAvailableTimeMillis = System.currentTimeMillis() + timeout;
+                    hostAction.actionPerformed(e);
+                    portAction.actionPerformed(e);
+                    if (hostname == null || hostname.isEmpty() || port < 1) return;
+                    try {
+                        myNetCon.startConnection(hostname, port);
+                        connectButton.setText(DISCONNECT);
+                        connected = true;
+                        addText("Connected to " + hostname + " on port " + port);
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(frame, ex.toString(), "Connect Failed", JOptionPane.ERROR_MESSAGE);
+                    }
                 }
             }
         };
