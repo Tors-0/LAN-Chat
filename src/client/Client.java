@@ -23,7 +23,15 @@ public class Client implements Closeable {
     static int port;
     static JLabel portLabel;
     static JTextField portSelectField;
-    static String hostname;
+
+    public static void setHostname(String hostname) {
+        Client.hostname = hostname;
+        if (hostLabel != null) {
+            hostLabel.setText("Current host: " + hostname);
+        }
+    }
+
+    static String hostname = "               ";
     static JLabel hostLabel;
     static JTextField hostField;
     static JButton connectButton;
@@ -40,7 +48,7 @@ public class Client implements Closeable {
 
     // UDP socket for server discovery
     static DatagramSocket c;
-    static ArrayList<String> hosts;
+    static ArrayList<String> hosts = new ArrayList<>();
 
     public static void main(String[] args) {
         myNetCon = new Networking();
@@ -93,12 +101,11 @@ public class Client implements Closeable {
         portLabel = new JLabel("Current port: " + port);
 
         portSelectField = new JTextField(5);
-        portSelectField.setSize(50,1);
         portSelectField.setCaretColor(Color.white);
 
         hostLabel = new JLabel("Current host: " + hostname);
 
-        hostField = new JTextField(25);
+        hostField = new JTextField(15);
         hostField.setCaretColor(Color.white);
 
         connectButton = new JButton(CONNECT);
@@ -115,10 +122,10 @@ public class Client implements Closeable {
         configPane.add(portSelectField);
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(hostLabel);
-        configPane.add(Box.createRigidArea(new Dimension(5,0)));
-        configPane.add(hostField);
+//        configPane.add(hostField);
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(connectButton);
+        configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(searchButton);
 
         for (Component comp : configPane.getComponents()) {
@@ -164,10 +171,8 @@ public class Client implements Closeable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (hostField.getText().isEmpty()) return; // cancel if fields not present
-                hostname = hostField.getText();
+                setHostname(hostField.getText());
                 hostField.setText("");
-
-                hostLabel.setText("Current host: " + hostname);
             }
         };
         hostField.addActionListener(hostAction);
@@ -212,10 +217,11 @@ public class Client implements Closeable {
                 if (port < 1) return;
                 new Thread(() -> {
                     hosts = findLocalServerIPs();
+                    if (!hosts.isEmpty()) {
+                        System.out.println("found hosts: " + hosts);
+                        setHostname(hosts.get(0));
+                    }
                 }).start();
-                if (!hosts.isEmpty()) {
-                    System.out.println("found hosts: " + hosts);
-                }
             }
         };
         searchButton.addActionListener(searchAction);
