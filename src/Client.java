@@ -13,6 +13,7 @@ public class Client implements Closeable {
     static JTextField textField;
     static JLabel label;
     static JTextArea textArea;
+    static JScrollPane scrollableTextArea;
 
     public static void main(String[] args) {
         myNetCon = new Networking();
@@ -33,40 +34,62 @@ public class Client implements Closeable {
 
     private static void windowInit() {
         frame = new JFrame("ChatClient");
-        frame.setSize(600,450);
-        frame.setMinimumSize(new Dimension(600,450));
+        frame.setMinimumSize(new Dimension(600,465));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        textField = new JTextField(60);
-        textField.setVisible(true);
 
         textArea = new JTextArea("",25,60);
         textArea.append("ChatClient window open...");
-        textArea.setVisible(true);
         textArea.setSize(500,230);
         textArea.setLineWrap(true);
+        textArea.setEditable(false);
+        textArea.setForeground(Color.white);
+        textArea.setBackground(Color.gray);
+        textArea.setVisible(true);
+
+        scrollableTextArea = new ModernScrollPane(textArea);
+        scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollableTextArea.setSize(500,420);
+        new SmartScroller(scrollableTextArea);
+
+        label = new JLabel("Send a message:");
+        label.setHorizontalAlignment(JLabel.LEFT);
+        label.setForeground(Color.white);
+
+        textField = new JTextField(60);
+        textField.setForeground(Color.white);
+        textField.setBackground(Color.gray);
+        textField.setCaretColor(Color.white);
+        textField.setVisible(true);
 
         Container contentPane = frame.getContentPane();
         JPanel chatPane = new JPanel();
         chatPane.setLayout(new BoxLayout(chatPane,BoxLayout.Y_AXIS));
+        chatPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        chatPane.setBackground(Color.darkGray);
 
-        chatPane.add(textArea);
+        chatPane.add(scrollableTextArea);
         chatPane.add(Box.createRigidArea(new Dimension(0,5)));
+        chatPane.add(label);
         chatPane.add(textField);
 
         contentPane.add(chatPane, BorderLayout.NORTH);
+        contentPane.setBackground(Color.darkGray);
+
+        frame.setBackground(Color.darkGray);
+        frame.pack();
         frame.setVisible(true);
+        frame.setResizable(false);
 
         Action action = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String text = textField.getText();
-                sendToServer(text);
                 textField.setText("");
                 if (text.contains("stop")) {
                     System.out.println("stopping client...");
                     System.exit(0);
                 }
+                sendToServer(text);
             }
         };
         textField.addActionListener(action);

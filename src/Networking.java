@@ -17,9 +17,6 @@ public class Networking implements Closeable {
     public void sendMsg(String msg) throws IOException {
         out.println(msg);
     }
-    public BufferedReader getReader() {
-        return in;
-    }
     @Override
     public void close() throws IOException {
         in.close();
@@ -41,9 +38,14 @@ public class Networking implements Closeable {
                     throw new RuntimeException(e);
                 }
                 if (msg != null && !msg.isEmpty()) {
-                    System.out.println("\r" + msg.replace("\n","") + "     ");
-                    System.out.print("Send a message: ");
                     Client.addText(msg);
+                    if ("Server closed...".equals(msg)) {
+                        Client.addText("Exiting program in 5s...");
+                        long startTime = System.currentTimeMillis();
+                        startTime += 5000;
+                        while (startTime < System.currentTimeMillis()) {}
+                        System.exit(0);
+                    }
                 }
             }
         }

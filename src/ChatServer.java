@@ -1,12 +1,9 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
-public class ChatServer {
+public class ChatServer implements Closeable {
     private ServerSocket serverSocket;
     private final ArrayList<EchoClientHandler> clientHandlers = new ArrayList<>();
     static ChatServer server = new ChatServer();
@@ -21,8 +18,8 @@ public class ChatServer {
             currentClient++;
         }
     }
-    private void removeClient(EchoClientHandler client) {
-        clientHandlers.remove(client);
+    private synchronized void removeClient(EchoClientHandler handler) {
+        this.clientHandlers.remove(handler);
     }
     public synchronized void distributeMsg(String msg) {
         for (EchoClientHandler client : clientHandlers) {
@@ -30,6 +27,7 @@ public class ChatServer {
         }
     }
     public void stop() throws IOException {
+        distributeMsg("Server closed...");
         serverSocket.close();
     }
     public static void main(String[] args) {
@@ -44,6 +42,12 @@ public class ChatServer {
             System.out.println("internal server error: " + e.getMessage());
         }
     }
+
+    @Override
+    public void close() throws IOException {
+        stop();
+    }
+
     private static class EchoClientHandler extends Thread {
         private final Socket clientSocket;
         private PrintWriter out;
@@ -65,14 +69,14 @@ public class ChatServer {
                 try {
                     msg = in.readLine();
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    msg = null;
                 }
 
-                if (msg != null) {
+                if (msg != null && !msg.isEmpty()) {
                     System.out.printf("client %s: %s%n", clientID, msg);
                     msg = "client " + clientID + ": " + msg;
                     server.distributeMsg(msg);
-                } else {
+                } else if (msg == null) {
                     msg = String.format("client %s disconnected%n", clientID);
                     System.out.print(msg);
                     server.distributeMsg(msg);
