@@ -1,10 +1,12 @@
+package client;
+
 import java.awt.Component;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
 /**
- *  The SmartScroller will attempt to keep the viewport positioned based on
+ *  The client.SmartScroller will attempt to keep the viewport positioned based on
  *  the users interaction with the scrollbar. The normal behaviour is to keep
  *  the viewport positioned to see new data as it is dynamically added.
  *
@@ -66,7 +68,7 @@ public class SmartScroller implements AdjustmentListener
     }
 
     /**
-     *  Specify how the SmartScroller will function.
+     *  Specify how the client.SmartScroller will function.
      *
      *  @param scrollPane the scroll pane to monitor
      *  @param scrollDirection indicates which JScrollBar to monitor.
