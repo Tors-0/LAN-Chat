@@ -9,9 +9,18 @@ public class ChatServer implements Closeable {
     private ServerSocket serverSocket;
     private final ArrayList<EchoClientHandler> clientHandlers = new ArrayList<>();
     static ChatServer server = new ChatServer();
+    static Thread discoveryThread;
+    static int port;
+    public static int getPort() {
+        return port;
+    }
     public void start(int port) throws IOException {
+        ChatServer.port = port;
         serverSocket = new ServerSocket(port);
         System.out.println("Server started on port " + port);
+        discoveryThread = new Thread(DiscoveryThread.getInstance());
+        discoveryThread.start();
+        System.out.println("Listening for clients on port " + port);
         int currentClient = 0;
         while (true) {
             EchoClientHandler handler = new EchoClientHandler(serverSocket.accept(), currentClient);
