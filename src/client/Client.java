@@ -1,5 +1,7 @@
 package client;
 
+import server.ChatServer;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -19,9 +21,9 @@ public class Client implements Closeable {
     static JTextField msgField;
     static JLabel msgLabel;
     static int port;
-    static JLabel portLabel;
-    static JTextField portSelectField;
-
+    public static int getPort() {
+        return port;
+    }
     public static void setHostname(String hostname) {
         Client.hostname = hostname.replaceAll(" ","");
         if (hostLabel != null) {
@@ -31,15 +33,21 @@ public class Client implements Closeable {
 
     static String hostname = "               ";
     static JLabel hostLabel;
-    static JTextField hostField;
     static JButton connectButton;
-    static final String    CONNECT = "Join";
     static final String DISCONNECT = "Exit";
-    static JButton searchButton;
     static JTextArea textArea;
     static JScrollPane scrollableTextArea;
+    static JButton clientButton;
+    static JButton serverButton;
+    static Action connectAction;
+    public static Action getConnectAction() {
+        return connectAction;
+    }
+    static JTextField menuPortField;
+
     static JPanel chatPane;
     static JPanel configPane;
+    static JPanel menuPane;
 
     static boolean connected = false;
     static final int joinTimeout = 3000;
@@ -57,7 +65,7 @@ public class Client implements Closeable {
 
     private static void windowInit() {
         frame = new JFrame("ChatClient");
-        frame.setMinimumSize(new Dimension(600,465));
+        frame.setMinimumSize(new Dimension(520,450));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // begin messaging panel
@@ -97,40 +105,58 @@ public class Client implements Closeable {
         }
 
         // begin config panel
-        portLabel = new JLabel("Current port: " + port);
-
-        portSelectField = new JTextField(5);
-        portSelectField.setCaretColor(Color.white);
-
         hostLabel = new JLabel("Current host: " + hostname);
 
-        hostField = new JTextField(15);
-        hostField.setCaretColor(Color.white);
-
-        connectButton = new JButton(CONNECT);
-
-        searchButton = new JButton("Find servers on current port");
+        connectButton = new JButton(DISCONNECT);
 
         configPane = new JPanel();
         configPane.setLayout(new BoxLayout(configPane,BoxLayout.X_AXIS));
         configPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
         configPane.setBackground(Color.darkGray);
 
-        configPane.add(portLabel);
-        configPane.add(Box.createRigidArea(new Dimension(5,0)));
-        configPane.add(portSelectField);
-        configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(hostLabel);
-//        configPane.add(hostField);
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(connectButton);
-        configPane.add(Box.createRigidArea(new Dimension(5,0)));
-        configPane.add(searchButton);
 
         for (Component comp : configPane.getComponents()) {
             comp.setBackground(Color.gray);
             comp.setForeground(Color.white);
         }
+
+        menuPortField = new JTextField(5);
+        menuPortField.setMaximumSize(new Dimension(150,25));
+        menuPortField.setCaretColor(Color.white);
+
+        clientButton = new JButton("Join");
+
+        serverButton = new JButton("Host");
+
+        menuPane = new JPanel();
+        menuPane.setLayout(new BoxLayout(menuPane,BoxLayout.X_AXIS));
+        menuPane.setBackground(Color.darkGray);
+
+        JPanel centeredPanel = new JPanel();
+        centeredPanel.setLayout(new BoxLayout(centeredPanel, BoxLayout.Y_AXIS));
+        centeredPanel.setBackground(Color.darkGray);
+
+        centeredPanel.add(Box.createVerticalGlue());
+        centeredPanel.add(new JLabel("LAN Chat"));
+        centeredPanel.add(new JLabel("Enter port below"));
+        centeredPanel.add(menuPortField);
+        centeredPanel.add(Box.createRigidArea(new Dimension(0,5)));
+        centeredPanel.add(clientButton);
+        centeredPanel.add(Box.createRigidArea(new Dimension(0,5)));
+        centeredPanel.add(serverButton);
+        centeredPanel.add(Box.createVerticalGlue());
+
+        for (Component comp : centeredPanel.getComponents()) {
+            comp.setBackground(Color.gray);
+            comp.setForeground(Color.white);
+        }
+
+        menuPane.add(Box.createHorizontalGlue());
+        menuPane.add(centeredPanel);
+        menuPane.add(Box.createHorizontalGlue());
 
         Container contentPane = frame.getContentPane();
         contentPane.add(chatPane, BorderLayout.NORTH);
@@ -141,6 +167,11 @@ public class Client implements Closeable {
         frame.pack();
         frame.setResizable(false);
         frame.setVisible(true);
+
+        chatPane.setVisible(false);
+        configPane.setVisible(false);
+        menuPane.setVisible(true);
+        contentPane.add(menuPane, BorderLayout.CENTER);
 
         Action msgAction = new AbstractAction() {
             @Override
@@ -155,37 +186,21 @@ public class Client implements Closeable {
             }
         };
         msgField.addActionListener(msgAction);
-        Action portAction = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (portSelectField.getText().isEmpty()) return; // cancel if fields not present
-                port = Integer.parseInt(portSelectField.getText());
-                portSelectField.setText("");
-
-                portLabel.setText("Current port: " + port);
-            }
-        };
-        portSelectField.addActionListener(portAction);
-        Action hostAction = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (hostField.getText().isEmpty()) return; // cancel if fields not present
-                setHostname(hostField.getText());
-                hostField.setText("");
-            }
-        };
-        hostField.addActionListener(hostAction);
-        Action connectAction = new AbstractAction() {
+        connectAction = new AbstractAction() {
             long nextAvailableTimeMillis = System.currentTimeMillis() + joinTimeout;
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (connected) {
                     try {
+                        if (ChatServer.isServerStarted()) {
+                            ChatServer.server.stop();
+                        }
                         myNetCon.close();
-                        connectButton.setText(CONNECT);
                         textArea.setText("Connection to " + hostname + " terminated...\n");
                         connected = false;
-                        searchButton.setEnabled(true);
+                        chatPane.setVisible(false);
+                        configPane.setVisible(false);
+                        menuPane.setVisible(true);
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(frame,ex.toString(),"Disconnect Error",JOptionPane.ERROR_MESSAGE);
                     }
@@ -195,15 +210,11 @@ public class Client implements Closeable {
                         return;
                     }
                     nextAvailableTimeMillis = System.currentTimeMillis() + joinTimeout;
-                    hostAction.actionPerformed(e);
-                    portAction.actionPerformed(e);
                     if (hostname == null || hostname.replaceAll(" ","").isEmpty() || port < 1) return;
                     try {
                         myNetCon.startConnection(hostname, port);
-                        connectButton.setText(DISCONNECT);
                         connected = true;
-                        addText("Connected to " + hostname + " on port " + port);
-                        searchButton.setEnabled(false);
+                        textArea.setText("Connected to " + hostname + " on port " + port);
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(frame, ex.toString(), "Connect Failed", JOptionPane.ERROR_MESSAGE);
                     }
@@ -212,7 +223,7 @@ public class Client implements Closeable {
         };
         connectButton.addActionListener(connectAction);
         Action searchAction = new AbstractAction() {
-            long nextAvailableTimeMillis = System.currentTimeMillis() + discoveryTimeout;
+            long nextAvailableTimeMillis = System.currentTimeMillis();
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (nextAvailableTimeMillis > System.currentTimeMillis()) {
@@ -220,18 +231,59 @@ public class Client implements Closeable {
                     return;
                 }
                 nextAvailableTimeMillis = System.currentTimeMillis() + discoveryTimeout;
-                portAction.actionPerformed(e);
                 if (port < 1) return;
                 new Thread(() -> {
                     hosts = findLocalServerIPs();
                     if (!hosts.isEmpty()) {
                         System.out.println("found hosts: " + hosts);
                         setHostname(hosts.get(0));
+                        connectAction.actionPerformed(e);
+                    } else {
+                        System.out.println("no hosts found");
+
+                        JOptionPane.showMessageDialog(frame,"No server on port " + port, "No Host Found", JOptionPane.INFORMATION_MESSAGE);
+
+                        chatPane.setVisible(false);
+                        configPane.setVisible(false);
+                        menuPane.setVisible(true);
                     }
                 }).start();
             }
         };
-        searchButton.addActionListener(searchAction);
+        Action joinAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (menuPortField.getText().isEmpty()) return;
+                port = Integer.parseInt(menuPortField.getText());
+                searchAction.actionPerformed(e);
+                connectButton.setText(DISCONNECT);
+                menuPane.setVisible(false);
+                chatPane.setVisible(true);
+                configPane.setVisible(true);
+            }
+        };
+        clientButton.addActionListener(joinAction);
+        Action hostAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (menuPortField.getText().isEmpty()) return;
+                port = Integer.parseInt(menuPortField.getText());
+
+                new Thread(() -> {
+                    try {
+                        ChatServer.server.start();
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(frame, ex.toString(), "Server Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }).start();
+
+                connectButton.setText("Stop server and " + DISCONNECT);
+                menuPane.setVisible(false);
+                chatPane.setVisible(true);
+                configPane.setVisible(true);
+            }
+        };
+        serverButton.addActionListener(hostAction);
     }
 
     public static void addText(String txt) {
@@ -302,6 +354,7 @@ public class Client implements Closeable {
             //Wait for a response
             byte[] recvBuf = new byte[256];
             DatagramPacket receivePacket = new DatagramPacket(recvBuf, recvBuf.length);
+            c.setSoTimeout(1000);
             c.receive(receivePacket);
 
             //We have a response
@@ -317,7 +370,7 @@ public class Client implements Closeable {
             //Close the port!
             c.close();
         } catch (IOException ex) {
-            Logger.getLogger(JFrame.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println(ex.toString());
         }
         return serverIPs;
     }

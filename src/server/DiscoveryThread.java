@@ -11,11 +11,7 @@ import java.util.logging.Logger;
  * Website: <a href="https://michieldemey.be/blog/network-discovery-using-udp-broadcast/">Code Source</a>
  * @author Michiel De Mey
  */
-public class DiscoveryThread implements Runnable {
-    private static final DiscoveryThread INSTANCE = new DiscoveryThread();
-    public static DiscoveryThread getInstance() {
-        return INSTANCE;
-    }
+public class DiscoveryThread extends Thread {
     DatagramSocket socket;
     int port;
     public DiscoveryThread() {
@@ -29,6 +25,9 @@ public class DiscoveryThread implements Runnable {
             socket.setBroadcast(true);
 
             while (true) {
+                if (interrupted()) {
+                    break;
+                }
                 System.out.println(getClass().getName() + ">>>Ready to receive broadcast packets!");
 
                 //Receive a packet

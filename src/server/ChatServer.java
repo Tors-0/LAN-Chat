@@ -1,5 +1,9 @@
 package server;
 
+import client.Client;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -8,20 +12,28 @@ import java.util.ArrayList;
 public class ChatServer implements Closeable {
     private ServerSocket serverSocket;
     private final ArrayList<EchoClientHandler> clientHandlers = new ArrayList<>();
-    static ChatServer server = new ChatServer();
+    public static final ChatServer server = new ChatServer();
     static Thread discoveryThread;
     static int port;
     public static int getPort() {
         return port;
     }
-    public void start(int port) throws IOException {
-        ChatServer.port = port;
+    static boolean serverStarted = false;
+    public static boolean isServerStarted() {
+        return serverStarted;
+    }
+    public void start() throws IOException {
+        ChatServer.port = Client.getPort();
         serverSocket = new ServerSocket(port);
         System.out.println("Server started on port " + port);
-        discoveryThread = new Thread(DiscoveryThread.getInstance());
+        discoveryThread = new DiscoveryThread();
         discoveryThread.start();
         System.out.println("Listening for clients on port " + port);
         int currentClient = 0;
+        JOptionPane.showMessageDialog(null,"Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
+        Client.setHostname("127.0.0.1");
+        Client.getConnectAction().actionPerformed(null);
+        serverStarted = true;
         while (true) {
             EchoClientHandler handler = new EchoClientHandler(serverSocket.accept(), currentClient);
             handler.start();
@@ -39,19 +51,9 @@ public class ChatServer implements Closeable {
     }
     public void stop() throws IOException {
         distributeMsg("Server closed...");
+        discoveryThread.interrupt();
+        serverStarted = false;
         serverSocket.close();
-    }
-    public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("No argument given, exiting...");
-            System.exit(1);
-        }
-        int port = Integer.parseInt(args[0]);
-        try {
-            server.start(port);
-        } catch (Exception e) {
-            System.out.println("internal server error: " + e.getMessage());
-        }
     }
 
     @Override
