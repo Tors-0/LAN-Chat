@@ -32,7 +32,7 @@ public class DiscoveryThread implements Runnable {
                 System.out.println(getClass().getName() + ">>>Ready to receive broadcast packets!");
 
                 //Receive a packet
-                byte[] recvBuf = new byte[15000];
+                byte[] recvBuf = new byte[256];
                 DatagramPacket packet = new DatagramPacket(recvBuf, recvBuf.length);
                 socket.receive(packet);
 

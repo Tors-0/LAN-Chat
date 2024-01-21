@@ -1,5 +1,7 @@
 package client;
 
+import java.applet.Applet;
+import java.applet.AudioClip;
 import java.io.*;
 import java.net.Socket;
 
@@ -43,6 +45,17 @@ public class Networking implements Closeable {
                 } catch (IOException ignored) {}
                 if (msg != null && !msg.isEmpty()) {
                     Client.addText(msg);
+                    if (!Client.frame.isActive()) {
+                        // send a toast message
+                        // new thread to avoid queueing toasts
+                        String finalMsg = msg;
+                        new Thread(() -> {
+                            new Toast(finalMsg).display();
+                        }).start();
+
+                        // make a little noise :3
+                        PlaySound.playNotifySound();
+                    }
                     if ("Server closed...".equals(msg)) {
                         Client.addText("Exiting program in 5s...");
                         long startTime = System.currentTimeMillis();
@@ -52,6 +65,12 @@ public class Networking implements Closeable {
                     }
                 }
             }
+        }
+    }
+    private static class PlaySound {
+        static AudioClip clip = Applet.newAudioClip(PlaySound.class.getResource("/client/sounds/notify.wav"));
+        public static void playNotifySound() {
+            clip.play();
         }
     }
 }

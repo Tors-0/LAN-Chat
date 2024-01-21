@@ -1,6 +1,5 @@
 package client;
 
-import javax.management.DynamicMBean;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -8,7 +7,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -44,7 +42,8 @@ public class Client implements Closeable {
     static JPanel configPane;
 
     static boolean connected = false;
-    static final int timeout = 3000;
+    static final int joinTimeout = 3000;
+    static final int discoveryTimeout = 5000;
 
     // UDP socket for server discovery
     static DatagramSocket c;
@@ -177,7 +176,7 @@ public class Client implements Closeable {
         };
         hostField.addActionListener(hostAction);
         Action connectAction = new AbstractAction() {
-            long nextAvailableTimeMillis = System.currentTimeMillis() + timeout;
+            long nextAvailableTimeMillis = System.currentTimeMillis() + joinTimeout;
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (connected) {
@@ -186,6 +185,7 @@ public class Client implements Closeable {
                         connectButton.setText(CONNECT);
                         textArea.setText("Connection to " + hostname + " terminated...\n");
                         connected = false;
+                        searchButton.setEnabled(true);
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(frame,ex.toString(),"Disconnect Error",JOptionPane.ERROR_MESSAGE);
                     }
@@ -194,7 +194,7 @@ public class Client implements Closeable {
                         JOptionPane.showMessageDialog(frame,"Please wait " + (nextAvailableTimeMillis-System.currentTimeMillis()) + "ms before connecting again","Timed Out!",JOptionPane.WARNING_MESSAGE);
                         return;
                     }
-                    nextAvailableTimeMillis = System.currentTimeMillis() + timeout;
+                    nextAvailableTimeMillis = System.currentTimeMillis() + joinTimeout;
                     hostAction.actionPerformed(e);
                     portAction.actionPerformed(e);
                     if (hostname == null || hostname.isEmpty() || port < 1) return;
@@ -203,6 +203,7 @@ public class Client implements Closeable {
                         connectButton.setText(DISCONNECT);
                         connected = true;
                         addText("Connected to " + hostname + " on port " + port);
+                        searchButton.setEnabled(false);
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(frame, ex.toString(), "Connect Failed", JOptionPane.ERROR_MESSAGE);
                     }
@@ -211,8 +212,14 @@ public class Client implements Closeable {
         };
         connectButton.addActionListener(connectAction);
         Action searchAction = new AbstractAction() {
+            long nextAvailableTimeMillis = System.currentTimeMillis() + discoveryTimeout;
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (nextAvailableTimeMillis > System.currentTimeMillis()) {
+                    JOptionPane.showMessageDialog(frame,"Please wait " + (nextAvailableTimeMillis-System.currentTimeMillis()) + "ms before searching again","Timed Out!",JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                nextAvailableTimeMillis = System.currentTimeMillis() + discoveryTimeout;
                 portAction.actionPerformed(e);
                 if (port < 1) return;
                 new Thread(() -> {
@@ -293,7 +300,7 @@ public class Client implements Closeable {
             System.out.println(Client.class.getName() + ">>> Done looping over all network interfaces. Now waiting for a reply!");
 
             //Wait for a response
-            byte[] recvBuf = new byte[15000];
+            byte[] recvBuf = new byte[256];
             DatagramPacket receivePacket = new DatagramPacket(recvBuf, recvBuf.length);
             c.receive(receivePacket);
 
