@@ -23,7 +23,7 @@ public class Client implements Closeable {
     static JTextField portSelectField;
 
     public static void setHostname(String hostname) {
-        Client.hostname = hostname;
+        Client.hostname = hostname.replaceAll(" ","");
         if (hostLabel != null) {
             hostLabel.setText("Current host: " + hostname);
         }
@@ -197,7 +197,7 @@ public class Client implements Closeable {
                     nextAvailableTimeMillis = System.currentTimeMillis() + joinTimeout;
                     hostAction.actionPerformed(e);
                     portAction.actionPerformed(e);
-                    if (hostname == null || hostname.isEmpty() || port < 1) return;
+                    if (hostname == null || hostname.replaceAll(" ","").isEmpty() || port < 1) return;
                     try {
                         myNetCon.startConnection(hostname, port);
                         connectButton.setText(DISCONNECT);
