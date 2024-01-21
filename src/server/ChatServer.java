@@ -30,9 +30,9 @@ public class ChatServer implements Closeable {
         discoveryThread.start();
         System.out.println("Listening for clients on port " + port);
         int currentClient = 0;
-        JOptionPane.showMessageDialog(null,"Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
         Client.setHostname("127.0.0.1");
         Client.getConnectAction().actionPerformed(null);
+        Client.showAlertMessage("Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
         serverStarted = true;
         while (true) {
             EchoClientHandler handler = new EchoClientHandler(serverSocket.accept(), currentClient);
@@ -50,7 +50,6 @@ public class ChatServer implements Closeable {
         }
     }
     public void stop() throws IOException {
-        distributeMsg("Server closed...");
         discoveryThread.interrupt();
         serverStarted = false;
         serverSocket.close();
