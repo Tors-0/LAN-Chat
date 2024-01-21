@@ -56,12 +56,8 @@ public class Networking implements Closeable {
                         // make a little noise :3
                         PlaySound.playNotifySound();
                     }
-                    if ("Server closed...".equals(msg)) {
-                        Client.addText("Exiting program in 5s...");
-                        long startTime = System.currentTimeMillis();
-                        startTime += 5000;
-                        while (startTime < System.currentTimeMillis()) {}
-                        System.exit(0);
+                    if ("Server closed".equals(msg)) {
+                        Client.getConnectAction().actionPerformed(null);
                     }
                 }
             }

@@ -196,7 +196,6 @@ public class Client implements Closeable {
                             ChatServer.server.stop();
                         }
                         myNetCon.close();
-                        textArea.setText("Connection to " + hostname + " terminated...\n");
                         connected = false;
                         chatPane.setVisible(false);
                         configPane.setVisible(false);
