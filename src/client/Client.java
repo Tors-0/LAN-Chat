@@ -194,6 +194,8 @@ public class Client implements Closeable {
                     try {
                         if (ChatServer.isServerStarted()) {
                             ChatServer.server.stop();
+                        } else if (e == null) {
+                            JOptionPane.showMessageDialog(frame, "Server closed", "Disconnected", JOptionPane.INFORMATION_MESSAGE);
                         }
                         myNetCon.close();
                         connected = false;
