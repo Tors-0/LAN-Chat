@@ -187,7 +187,7 @@ public class Client implements Closeable {
         };
         msgField.addActionListener(msgAction);
         connectAction = new AbstractAction() {
-            long nextAvailableTimeMillis = System.currentTimeMillis() + joinTimeout;
+            long nextAvailableTimeMillis = System.currentTimeMillis();
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (connected) {
@@ -237,6 +237,9 @@ public class Client implements Closeable {
                         System.out.println("found hosts: " + hosts);
                         setHostname(hosts.get(0));
                         connectAction.actionPerformed(e);
+                        menuPane.setVisible(false);
+                        chatPane.setVisible(true);
+                        configPane.setVisible(true);
                     } else {
                         System.out.println("no hosts found");
 
@@ -256,9 +259,6 @@ public class Client implements Closeable {
                 port = Integer.parseInt(menuPortField.getText());
                 searchAction.actionPerformed(e);
                 connectButton.setText(DISCONNECT);
-                menuPane.setVisible(false);
-                chatPane.setVisible(true);
-                configPane.setVisible(true);
             }
         };
         clientButton.addActionListener(joinAction);
@@ -272,7 +272,11 @@ public class Client implements Closeable {
                     try {
                         ChatServer.server.start();
                     } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(frame, ex.toString(), "Server Error", JOptionPane.ERROR_MESSAGE);
+                        if (ex.getClass().equals(SocketException.class)) {
+                            JOptionPane.showMessageDialog(frame, "Server closed", "Disconnected", JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(frame, ex.toString(), "Server Error", JOptionPane.ERROR_MESSAGE);
+                        }
                     }
                 }).start();
 
@@ -284,7 +288,9 @@ public class Client implements Closeable {
         };
         serverButton.addActionListener(hostAction);
     }
-
+    public static void showAlertMessage(String msg, String name, int messageType) {
+        JOptionPane.showMessageDialog(frame,msg,name,messageType);
+    }
     public static void addText(String txt) {
         if (textArea != null) {
             textArea.append("\n" + txt);

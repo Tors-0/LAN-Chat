@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,9 +16,18 @@ import java.util.logging.Logger;
 public class DiscoveryThread extends Thread {
     DatagramSocket socket;
     int port;
+    private boolean stop = false;
     public DiscoveryThread() {
         this.port = ChatServer.getPort();
     }
+
+    @Override
+    public void interrupt() {
+        stop = true;
+        socket.close();
+        super.interrupt();
+    }
+
     @Override
     public void run() {
         try {
@@ -25,9 +36,6 @@ public class DiscoveryThread extends Thread {
             socket.setBroadcast(true);
 
             while (true) {
-                if (interrupted()) {
-                    break;
-                }
                 System.out.println(getClass().getName() + ">>>Ready to receive broadcast packets!");
 
                 //Receive a packet
@@ -52,7 +60,9 @@ public class DiscoveryThread extends Thread {
                 }
             }
         } catch (IOException ex) {
-            Logger.getLogger(DiscoveryThread.class.getName()).log(Level.SEVERE, null, ex);
+            if (!ex.getClass().equals(SocketException.class)) {
+                Logger.getLogger(DiscoveryThread.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 }
