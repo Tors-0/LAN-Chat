@@ -187,7 +187,6 @@ public class Client implements Closeable {
         };
         msgField.addActionListener(msgAction);
         connectAction = new AbstractAction() {
-            long nextAvailableTimeMillis = System.currentTimeMillis();
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (connected) {
@@ -206,11 +205,6 @@ public class Client implements Closeable {
                         JOptionPane.showMessageDialog(frame,ex.toString(),"Disconnect Error",JOptionPane.ERROR_MESSAGE);
                     }
                 } else {
-                    if (nextAvailableTimeMillis > System.currentTimeMillis()) {
-                        JOptionPane.showMessageDialog(frame,"Please wait " + (nextAvailableTimeMillis-System.currentTimeMillis()) + "ms before connecting again","Timed Out!",JOptionPane.WARNING_MESSAGE);
-                        return;
-                    }
-                    nextAvailableTimeMillis = System.currentTimeMillis() + joinTimeout;
                     if (hostname == null || hostname.replaceAll(" ","").isEmpty() || port < 1) return;
                     try {
                         myNetCon.startConnection(hostname, port);
