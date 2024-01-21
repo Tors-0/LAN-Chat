@@ -50,9 +50,14 @@ public class ChatServer implements Closeable {
         }
     }
     public void stop() throws IOException {
+        distributeMsg("Server closed");
         discoveryThread.interrupt();
         serverStarted = false;
+        for (EchoClientHandler handler : clientHandlers) {
+            handler.closeClient();
+        }
         serverSocket.close();
+        clientHandlers.clear();
     }
 
     @Override
@@ -95,11 +100,12 @@ public class ChatServer implements Closeable {
                     break;
                 }
             }
-            ChatServer.server.removeClient(this);
+        }
+        public void closeClient() {
             try {
+                clientSocket.close();
                 in.close();
                 out.close();
-                clientSocket.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
