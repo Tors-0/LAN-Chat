@@ -25,8 +25,10 @@ public class Networking implements Closeable {
     }
     @Override
     public void close() throws IOException {
-        worker.interrupt();
-        worker = null;
+        if (worker != null) {
+            worker.interrupt();
+            worker = null;
+        }
         socket.close();
         out.close();
         in.close();
@@ -58,6 +60,7 @@ public class Networking implements Closeable {
                     }
                     if ("Server closed".equals(msg)) {
                         Client.getConnectAction().actionPerformed(null);
+                        break;
                     }
                 }
             }
