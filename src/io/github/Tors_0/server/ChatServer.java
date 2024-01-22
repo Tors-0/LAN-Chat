@@ -13,6 +13,7 @@ import java.util.Iterator;
 public class ChatServer implements Closeable {
     private ServerSocket serverSocket;
     private final ArrayList<EchoClientHandler> clientHandlers = new ArrayList<>();
+    private final Object handlerListLock = new Object();
     public static final ChatServer server = new ChatServer();
     static Thread discoveryThread;
     static int port;
@@ -23,6 +24,7 @@ public class ChatServer implements Closeable {
     public static boolean isServerStarted() {
         return serverStarted;
     }
+    static final int maxNicknameLength = 20;
     public void start() throws IOException {
         ChatServer.port = Client.getPort();
         serverSocket = new ServerSocket(port);
@@ -42,12 +44,16 @@ public class ChatServer implements Closeable {
             currentClient++;
         }
     }
-    private synchronized void removeClient(EchoClientHandler handler) {
-        this.clientHandlers.remove(handler);
+    private void removeClient(EchoClientHandler handler) {
+        synchronized (handlerListLock) {
+            this.clientHandlers.remove(handler);
+        }
     }
-    public synchronized void distributeMsg(String msg) {
-        for (Iterator<EchoClientHandler> clients = clientHandlers.iterator(); clients.hasNext();) {
-            clients.next().sendMsg(msg);
+    public void distributeMsg(String msg) {
+        synchronized (handlerListLock) {
+            for (EchoClientHandler clientHandler : clientHandlers) {
+                clientHandler.sendMsg(msg);
+            }
         }
     }
     public void stop() throws IOException {
@@ -71,6 +77,7 @@ public class ChatServer implements Closeable {
         private PrintWriter out;
         private BufferedReader in;
         private String clientID;
+        private boolean nicknamed = false;
         private HashMap<String, String> commandRegistry = new HashMap<>();
         public EchoClientHandler(Socket socket, int id) {
             this.clientSocket = socket;
@@ -98,16 +105,17 @@ public class ChatServer implements Closeable {
                 if (msg != null && !msg.isEmpty()) {
                     doMessageAction(msg);
                 } else if (msg == null) {
-                    msg = String.format("io.github.Tors_0.client %s disconnected%n", clientID);
+                    msg = String.format("%s disconnected%n", (nicknamed ? clientID : "client " + clientID));
                     System.out.print(msg);
                     server.distributeMsg(msg);
+                    server.removeClient(this);
                     break;
                 }
             }
         }
         private void doMessageAction(String text) {
             if (text.startsWith("/help")) {
-                out.println("Valid io.github.Tors_0.server commands:");
+                out.println("Valid server commands:");
                 commandRegistry.forEach((com,desc) -> {
                     out.printf("\"%s\" -> %s%n", com, desc);
                 });
@@ -115,15 +123,20 @@ public class ChatServer implements Closeable {
             } else if (text.startsWith("/nickname")) {
                 String newName = text.substring(9);
                 if (!newName.trim().isEmpty()) {
-                    clientID = newName.trim();
-                    out.println("Nickname changed to " + clientID);
+                    if (newName.trim().length() <= ChatServer.maxNicknameLength) {
+                        server.distributeMsg((nicknamed ? clientID : "client " + clientID) + " changed nickname to " + newName.trim());
+                        clientID = newName.trim();
+                        nicknamed = true;
+                    } else {
+                        this.out.println("Nickname must not exceed length " + ChatServer.maxNicknameLength);
+                    }
                 } else {
                     this.out.println("Nickname must not be blank...");
                 }
             } else if (text.startsWith("/")) {
                 out.println("Invalid command...");
             } else {
-                text = String.format("io.github.Tors_0.client %s: %s%n", clientID, text);
+                text = String.format("%s: %s%n", (nicknamed ? clientID : "client " + clientID), text);
                 System.out.println(text);
                 server.distributeMsg(text);
             }
