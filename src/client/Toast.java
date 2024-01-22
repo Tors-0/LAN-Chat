@@ -7,6 +7,10 @@ import java.awt.event.ComponentEvent;
 import java.awt.geom.RoundRectangle2D;
 
 class Toast extends JFrame {
+    static int width = 150;
+    static int xPos = Toolkit.getDefaultToolkit().getScreenSize().width - width;
+    static int height = 50;
+    static int yPos = Toolkit.getDefaultToolkit().getScreenSize().height - height;
     public Toast(final String message) {
         setUndecorated(true);
         setLayout(new GridBagLayout());
@@ -27,7 +31,7 @@ class Toast extends JFrame {
 
         add(panel);
 
-        setLocation(Toolkit.getDefaultToolkit().getScreenSize().width,Toolkit.getDefaultToolkit().getScreenSize().height);
+        setLocation(xPos,yPos);
 
         addComponentListener(new ComponentAdapter() {
             @Override
