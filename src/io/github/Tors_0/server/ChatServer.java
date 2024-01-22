@@ -1,13 +1,14 @@
-package server;
+package io.github.Tors_0.server;
 
-import client.Client;
+import io.github.Tors_0.client.Client;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class ChatServer implements Closeable {
     private ServerSocket serverSocket;
@@ -31,9 +32,9 @@ public class ChatServer implements Closeable {
         System.out.println("Listening for clients on port " + port);
         int currentClient = 0;
         Client.setHostname("127.0.0.1");
+        serverStarted = true;
         Client.getConnectAction().actionPerformed(null);
         Client.showAlertMessage("Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
-        serverStarted = true;
         while (true) {
             EchoClientHandler handler = new EchoClientHandler(serverSocket.accept(), currentClient);
             handler.start();
@@ -45,8 +46,8 @@ public class ChatServer implements Closeable {
         this.clientHandlers.remove(handler);
     }
     public synchronized void distributeMsg(String msg) {
-        for (EchoClientHandler client : clientHandlers) {
-            client.sendMsg(msg);
+        for (Iterator<EchoClientHandler> clients = clientHandlers.iterator(); clients.hasNext();) {
+            clients.next().sendMsg(msg);
         }
     }
     public void stop() throws IOException {
@@ -69,10 +70,15 @@ public class ChatServer implements Closeable {
         private final Socket clientSocket;
         private PrintWriter out;
         private BufferedReader in;
-        private final int clientID;
-        public EchoClientHandler(Socket socket, int ID) {
+        private String clientID;
+        private HashMap<String, String> commandRegistry = new HashMap<>();
+        public EchoClientHandler(Socket socket, int id) {
             this.clientSocket = socket;
-            this.clientID = ID;
+            this.clientID = String.valueOf(id);
+
+            this.commandRegistry.put("/help", "Displays all valid commands");
+            this.commandRegistry.put("/nickname YOURNAME", "Changes your nickname on the io.github.Tors_0.server");
+            this.commandRegistry.put("/stop\", \"/exit\", \"/quit", "Disconnects you, closes io.github.Tors_0.server if you are host, and closes the window");
         }
         public void run() {
             try {
@@ -90,15 +96,36 @@ public class ChatServer implements Closeable {
                 }
 
                 if (msg != null && !msg.isEmpty()) {
-                    System.out.printf("client %s: %s%n", clientID, msg);
-                    msg = "client " + clientID + ": " + msg;
-                    server.distributeMsg(msg);
+                    doMessageAction(msg);
                 } else if (msg == null) {
-                    msg = String.format("client %s disconnected%n", clientID);
+                    msg = String.format("io.github.Tors_0.client %s disconnected%n", clientID);
                     System.out.print(msg);
                     server.distributeMsg(msg);
                     break;
                 }
+            }
+        }
+        private void doMessageAction(String text) {
+            if (text.startsWith("/help")) {
+                out.println("Valid io.github.Tors_0.server commands:");
+                commandRegistry.forEach((com,desc) -> {
+                    out.printf("\"%s\" -> %s%n", com, desc);
+                });
+                out.println("\n");
+            } else if (text.startsWith("/nickname")) {
+                String newName = text.substring(9);
+                if (!newName.trim().isEmpty()) {
+                    clientID = newName.trim();
+                    out.println("Nickname changed to " + clientID);
+                } else {
+                    this.out.println("Nickname must not be blank...");
+                }
+            } else if (text.startsWith("/")) {
+                out.println("Invalid command...");
+            } else {
+                text = String.format("io.github.Tors_0.client %s: %s%n", clientID, text);
+                System.out.println(text);
+                server.distributeMsg(text);
             }
         }
         public void closeClient() {

@@ -1,11 +1,10 @@
-package server;
+package io.github.Tors_0.server;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

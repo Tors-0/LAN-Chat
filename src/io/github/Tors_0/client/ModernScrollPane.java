@@ -1,4 +1,4 @@
-package client;
+package io.github.Tors_0.client;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;

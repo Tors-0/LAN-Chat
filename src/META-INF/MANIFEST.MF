@@ -1,5 +1,5 @@
 Manifest-Version: 1.1
-Main-Class: client.Client
+Main-Class: io.github.Tors_0.client.Client
 Created-By: https://github.com/Tors-0/
 Name: LAN-Chat
 

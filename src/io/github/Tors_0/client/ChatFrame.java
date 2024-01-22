@@ -1,4 +1,4 @@
-package client;
+package io.github.Tors_0.client;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,9 +27,7 @@ public class ChatFrame extends JFrame {
         if (e.getID() == WindowEvent.WINDOW_CLOSING) {
             try {
                 Client.close();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            } catch (IOException ignored) {}
         }
 
         super.processWindowEvent(e);

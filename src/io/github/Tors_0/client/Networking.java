@@ -1,4 +1,4 @@
-package client;
+package io.github.Tors_0.client;
 
 import java.applet.Applet;
 import java.applet.AudioClip;

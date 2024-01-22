@@ -1,6 +1,6 @@
-package client;
+package io.github.Tors_0.client;
 
-import server.ChatServer;
+import io.github.Tors_0.server.ChatServer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -47,7 +47,7 @@ public class Client {
     static boolean connected = false;
     static final int discoveryTimeout = 5000;
 
-    // UDP socket for server discovery
+    // UDP socket for io.github.Tors_0.server discovery
     static DatagramSocket c;
     static ArrayList<String> hosts = new ArrayList<>();
 
@@ -171,8 +171,12 @@ public class Client {
             public void actionPerformed(ActionEvent e) {
                 String text = msgField.getText();
                 msgField.setText("");
-                if ("stop".equals(text)) {
-                    System.out.println("stopping client...");
+                String temp = text.trim();
+                if ("/stop".equals(temp) || "/exit".equals(temp) || "/quit".equals(temp)) {
+                    System.out.println("stopping io.github.Tors_0.client...");
+                    try {
+                        close();
+                    } catch (IOException ignored) {}
                     System.exit(0);
                 }
                 sendToServer(text);
@@ -186,11 +190,11 @@ public class Client {
                     try {
                         if (ChatServer.isServerStarted()) {
                             ChatServer.server.stop();
-                        } else if (e == null) {
-                            JOptionPane.showMessageDialog(frame, "Server closed", "Disconnected", JOptionPane.INFORMATION_MESSAGE);
                         }
+
                         myNetCon.close();
                         connected = false;
+
                         chatPane.setVisible(false);
                         configPane.setVisible(false);
                         menuPane.setVisible(true);
@@ -201,8 +205,15 @@ public class Client {
                     if (hostname == null || hostname.replaceAll(" ","").isEmpty() || port < 1) return;
                     try {
                         myNetCon.startConnection(hostname, port);
+
+                        menuPane.setVisible(false);
+                        chatPane.setVisible(true);
+                        configPane.setVisible(true);
+
                         connected = true;
+                        connectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
                         textArea.setText("Connected to " + hostname + " on port " + port);
+
                         sendToServer("joined");
                     } catch (IOException ex) {
                         if (e != null) {
@@ -229,13 +240,10 @@ public class Client {
                         System.out.println("found hosts: " + hosts);
                         setHostname(hosts.get(0));
                         connectAction.actionPerformed(e);
-                        menuPane.setVisible(false);
-                        chatPane.setVisible(true);
-                        configPane.setVisible(true);
                     } else {
                         System.out.println("no hosts found");
 
-                        JOptionPane.showMessageDialog(frame,"No server on port " + port, "No Host Found", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(frame,"No io.github.Tors_0.server on port " + port, "No Host Found", JOptionPane.INFORMATION_MESSAGE);
 
                         chatPane.setVisible(false);
                         configPane.setVisible(false);
@@ -262,24 +270,33 @@ public class Client {
             public void actionPerformed(ActionEvent e) {
                 if (menuPortField.getText().isEmpty()) return;
                 port = Integer.parseInt(menuPortField.getText());
-                if (port < 1024 || port > 49151) return; // cancel on invalid port numbers
+                if (port < 1024 || port > 49151) return; // cancel on invalid io.github.Tors_0.server port numbers
 
                 new Thread(() -> {
-                    try {
-                        ChatServer.server.start();
-                    } catch (IOException ex) {
-                        if (ex.getClass().equals(SocketException.class)) {
-                            JOptionPane.showMessageDialog(frame, "Server closed", "Disconnected", JOptionPane.INFORMATION_MESSAGE);
-                        } else {
-                            JOptionPane.showMessageDialog(frame, ex.toString(), "Server Error", JOptionPane.ERROR_MESSAGE);
+                    hosts = findLocalServerIPs();
+                    if (hosts.isEmpty()) {
+                        new Thread(() -> {
+                            try {
+                                ChatServer.server.start();
+                            } catch (IOException ex) {
+                                if (ex.getClass().equals(SocketException.class)) {
+                                    JOptionPane.showMessageDialog(frame, "Server closed", "Disconnected", JOptionPane.INFORMATION_MESSAGE);
+                                } else {
+                                    JOptionPane.showMessageDialog(frame, ex.toString(), "Server Error", JOptionPane.ERROR_MESSAGE);
+                                }
+                            }
+                        }).start();
+
+                        menuPane.setVisible(false);
+                        chatPane.setVisible(true);
+                        configPane.setVisible(true);
+                    } else {
+                        if (0 == JOptionPane.showConfirmDialog(frame,"Server already exists on this port, would you like to join it?", "Cannot Host", JOptionPane.YES_NO_OPTION)) {
+                            setHostname(hosts.get(0));
+                            connectAction.actionPerformed(e);
                         }
                     }
                 }).start();
-
-                connectButton.setText("Stop server and " + DISCONNECT);
-                menuPane.setVisible(false);
-                chatPane.setVisible(true);
-                configPane.setVisible(true);
             }
         };
         serverButton.addActionListener(hostAction);
@@ -303,13 +320,13 @@ public class Client {
 
     /**
      * Website: <a href="https://michieldemey.be/blog/network-discovery-using-udp-broadcast/">Code Source</a>
-     * @return list of hostname strings found by server search. length may be 0
+     * @return list of hostname strings found by io.github.Tors_0.server search. length may be 0
      * @author Michiel De Mey
      */
     private static ArrayList<String> findLocalServerIPs() {
         ArrayList<String> serverIPs = new ArrayList<>();
 
-        // Find the server using UDP broadcast
+        // Find the io.github.Tors_0.server using UDP broadcast
         try {
             //Open a random port to send the package
             c = new DatagramSocket();
@@ -359,7 +376,7 @@ public class Client {
             c.receive(receivePacket);
 
             //We have a response
-            System.out.println(Client.class.getName() + ">>> Broadcast response from server: " + receivePacket.getAddress().getHostAddress());
+            System.out.println(Client.class.getName() + ">>> Broadcast response from io.github.Tors_0.server: " + receivePacket.getAddress().getHostAddress());
 
             //Check if the message is correct
             String message = new String(receivePacket.getData()).trim();
@@ -380,6 +397,8 @@ public class Client {
         if (ChatServer.isServerStarted()) {
             ChatServer.server.stop();
         }
-        myNetCon.close();
+        if (connected) {
+            myNetCon.close();
+        }
     }
 }
