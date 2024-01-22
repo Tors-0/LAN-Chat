@@ -61,6 +61,9 @@ public class ChatServer implements Closeable {
         discoveryThread.interrupt();
         serverStarted = false;
         for (EchoClientHandler handler : clientHandlers) {
+            if (handler.getIP().equals("127.0.0.1")) {
+                continue;
+            }
             handler.closeClient();
         }
         serverSocket.close();
@@ -78,7 +81,10 @@ public class ChatServer implements Closeable {
         private BufferedReader in;
         private String clientID;
         private boolean nicknamed = false;
-        private HashMap<String, String> commandRegistry = new HashMap<>();
+        private final HashMap<String, String> commandRegistry = new HashMap<>();
+        public String getIP() {
+            return clientSocket.getInetAddress().getHostAddress();
+        }
         public EchoClientHandler(Socket socket, int id) {
             this.clientSocket = socket;
             this.clientID = String.valueOf(id);
@@ -137,7 +143,7 @@ public class ChatServer implements Closeable {
                 out.println("Invalid command...");
             } else {
                 text = String.format("%s: %s%n", (nicknamed ? clientID : "client " + clientID), text);
-                System.out.println(text);
+                System.out.print(text);
                 server.distributeMsg(text);
             }
         }
