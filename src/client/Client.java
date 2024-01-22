@@ -5,18 +5,13 @@ import server.ChatServer;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public class Client implements Closeable {
-    static Networking myNetCon;
-    static Scanner scanner = new Scanner(System.in);
+public class Client {
+    static Networking myNetCon = new Networking();
     static JFrame frame;
     static JTextField msgField;
     static JLabel msgLabel;
@@ -27,7 +22,7 @@ public class Client implements Closeable {
     public static void setHostname(String hostname) {
         Client.hostname = hostname.replaceAll(" ","");
         if (hostLabel != null) {
-            hostLabel.setText("Current host: " + hostname);
+            hostLabel.setText("Current host: " + hostname + ":" + port);
         }
     }
 
@@ -50,7 +45,6 @@ public class Client implements Closeable {
     static JPanel menuPane;
 
     static boolean connected = false;
-    static final int joinTimeout = 3000;
     static final int discoveryTimeout = 5000;
 
     // UDP socket for server discovery
@@ -58,13 +52,11 @@ public class Client implements Closeable {
     static ArrayList<String> hosts = new ArrayList<>();
 
     public static void main(String[] args) {
-        myNetCon = new Networking();
-
         windowInit();
     }
 
     private static void windowInit() {
-        frame = new JFrame("ChatClient");
+        frame = new ChatFrame("ChatClient");
         frame.setMinimumSize(new Dimension(520,450));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -141,7 +133,8 @@ public class Client implements Closeable {
 
         centeredPanel.add(Box.createVerticalGlue());
         centeredPanel.add(new JLabel("LAN Chat"));
-        centeredPanel.add(new JLabel("Enter port below"));
+        centeredPanel.add(new JLabel("Enter port from 1024-49151 below"));
+        centeredPanel.add(Box.createRigidArea(new Dimension(0,5)));
         centeredPanel.add(menuPortField);
         centeredPanel.add(Box.createRigidArea(new Dimension(0,5)));
         centeredPanel.add(clientButton);
@@ -210,8 +203,11 @@ public class Client implements Closeable {
                         myNetCon.startConnection(hostname, port);
                         connected = true;
                         textArea.setText("Connected to " + hostname + " on port " + port);
+                        sendToServer("joined");
                     } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(frame, ex.toString(), "Connect Failed", JOptionPane.ERROR_MESSAGE);
+                        if (e != null) {
+                            JOptionPane.showMessageDialog(frame, ex.toString(), "Connect Failed", JOptionPane.ERROR_MESSAGE);
+                        }
                     }
                 }
             }
@@ -253,16 +249,20 @@ public class Client implements Closeable {
             public void actionPerformed(ActionEvent e) {
                 if (menuPortField.getText().isEmpty()) return;
                 port = Integer.parseInt(menuPortField.getText());
+                if (port < 1024 || port > 49151) return; // cancel on invalid port numbers
+
                 searchAction.actionPerformed(e);
                 connectButton.setText(DISCONNECT);
             }
         };
         clientButton.addActionListener(joinAction);
+        menuPortField.addActionListener(joinAction);
         Action hostAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (menuPortField.getText().isEmpty()) return;
                 port = Integer.parseInt(menuPortField.getText());
+                if (port < 1024 || port > 49151) return; // cancel on invalid port numbers
 
                 new Thread(() -> {
                     try {
@@ -355,7 +355,7 @@ public class Client implements Closeable {
             //Wait for a response
             byte[] recvBuf = new byte[256];
             DatagramPacket receivePacket = new DatagramPacket(recvBuf, recvBuf.length);
-            c.setSoTimeout(1000);
+            c.setSoTimeout(2500);
             c.receive(receivePacket);
 
             //We have a response
@@ -376,8 +376,10 @@ public class Client implements Closeable {
         return serverIPs;
     }
 
-    @Override
-    public void close() throws IOException {
+    public static void close() throws IOException {
+        if (ChatServer.isServerStarted()) {
+            ChatServer.server.stop();
+        }
         myNetCon.close();
     }
 }

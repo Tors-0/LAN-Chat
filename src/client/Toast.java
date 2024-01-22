@@ -18,6 +18,7 @@ class Toast extends JFrame {
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 
         panel.add(new JLabel(Client.hostname,JLabel.LEFT));
         JLabel label = new JLabel(message,JLabel.LEFT);
