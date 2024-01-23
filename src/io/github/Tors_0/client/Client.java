@@ -173,10 +173,12 @@ public class Client {
                 msgField.setText("");
                 String temp = text.trim();
                 if ("/stop".equals(temp) || "/exit".equals(temp) || "/quit".equals(temp)) {
-                    System.out.println("stopping io.github.Tors_0.client...");
+                    System.out.println("stopping client...");
                     try {
                         close();
-                    } catch (IOException ignored) {}
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(frame,ex.toString(),"Stop Error",JOptionPane.ERROR_MESSAGE);
+                    }
                     System.exit(0);
                 }
                 sendToServer(text);
@@ -243,7 +245,7 @@ public class Client {
                     } else {
                         System.out.println("no hosts found");
 
-                        JOptionPane.showMessageDialog(frame,"No io.github.Tors_0.server on port " + port, "No Host Found", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(frame,"No server on port " + port, "No Host Found", JOptionPane.INFORMATION_MESSAGE);
 
                         chatPane.setVisible(false);
                         configPane.setVisible(false);
@@ -329,7 +331,7 @@ public class Client {
         // Find the io.github.Tors_0.server using UDP broadcast
         try {
             //Open a random port to send the package
-            c = new DatagramSocket();
+            c = new DatagramSocket(port);
             c.setBroadcast(true);
 
             byte[] sendData = "DISCOVER_FUIFSERVER_REQUEST".getBytes();
@@ -373,10 +375,12 @@ public class Client {
             byte[] recvBuf = new byte[256];
             DatagramPacket receivePacket = new DatagramPacket(recvBuf, recvBuf.length);
             c.setSoTimeout(2500);
-            c.receive(receivePacket);
+            do {
+                c.receive(receivePacket);
+            } while (!"DISCOVER_FUIFSERVER_RESPONSE".equals(new String(receivePacket.getData()).trim()));
 
             //We have a response
-            System.out.println(Client.class.getName() + ">>> Broadcast response from io.github.Tors_0.server: " + receivePacket.getAddress().getHostAddress());
+            System.out.println(Client.class.getName() + ">>> Broadcast response from server: " + receivePacket.getAddress().getHostAddress());
 
             //Check if the message is correct
             String message = new String(receivePacket.getData()).trim();
@@ -389,6 +393,7 @@ public class Client {
             c.close();
         } catch (IOException ex) {
             System.out.println(ex.toString());
+            c.close();
         }
         return serverIPs;
     }

@@ -86,8 +86,8 @@ public class ChatServer implements Closeable {
             this.clientID = String.valueOf(id);
 
             this.commandRegistry.put("/help", "Displays all valid commands");
-            this.commandRegistry.put("/nickname YOURNAME", "Changes your nickname on the io.github.Tors_0.server");
-            this.commandRegistry.put("/stop\", \"/exit\", \"/quit", "Disconnects you, closes io.github.Tors_0.server if you are host, and closes the window");
+            this.commandRegistry.put("/nickname NICKNAME_HERE", "Changes your nickname (" + maxNicknameLength + " char limit)");
+            this.commandRegistry.put("/stop\", \"/exit\", \"/quit", "Disconnects you, closes server if you are host, and closes the window");
         }
         public void run() {
             try {
@@ -110,7 +110,6 @@ public class ChatServer implements Closeable {
                     msg = String.format("%s disconnected%n", (nicknamed ? clientID : "client " + clientID));
                     System.out.print(msg);
                     server.distributeMsg(msg);
-                    server.removeClient(this);
                     break;
                 }
             }

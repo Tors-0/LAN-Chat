@@ -61,6 +61,7 @@ public class Networking implements Closeable {
                     }
                     if ("Server closed".equals(msg)) {
                         Client.showAlertMessage("Remote server stopped","Disconnected", JOptionPane.INFORMATION_MESSAGE);
+                        Client.getConnectAction().actionPerformed(null);
                         break;
                     }
                 }
