@@ -28,7 +28,7 @@ public class DiscoveryThread extends Thread {
     @Override
     public void run() {
         try {
-            //Keep a socket open to listen to all the UDP trafic that is destined for this port
+            //Keep a socket open to listen to all the UDP traffic that is destined for this port
             socket = new DatagramSocket(port, InetAddress.getByName("0.0.0.0"));
             socket.setBroadcast(true);
 

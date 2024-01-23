@@ -330,7 +330,7 @@ public class Client {
 
         // Find the io.github.Tors_0.server using UDP broadcast
         try {
-            //Open a random port to send the package
+            //Open a specific port to send the package
             c = new DatagramSocket(port);
             c.setBroadcast(true);
 
