@@ -60,7 +60,7 @@ public class Networking implements Closeable {
                         PlaySound.playNotifySound();
                     }
                     if ("Server closed".equals(msg)) {
-                        Client.showAlertMessage("Remote server stopped","Disconnected", JOptionPane.INFORMATION_MESSAGE);
+                        Client.showAlertMessage("Server stopped by host","Disconnected", JOptionPane.INFORMATION_MESSAGE);
                         Client.getConnectAction().actionPerformed(null);
                         break;
                     }

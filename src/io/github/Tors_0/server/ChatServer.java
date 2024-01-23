@@ -8,11 +8,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ChatServer implements Closeable {
     private ServerSocket serverSocket;
     private final ArrayList<ChatClientHandler> clientHandlers = new ArrayList<>();
-    private final Object handlerListLock = new Object();
+    private final ReentrantLock handlerListLock = new ReentrantLock();
     public static final ChatServer server = new ChatServer();
     static Thread discoveryThread;
     static int port;
@@ -44,9 +45,7 @@ public class ChatServer implements Closeable {
         }
     }
     private void removeClient(ChatClientHandler handler) {
-        synchronized (handlerListLock) {
-            this.clientHandlers.remove(handler);
-        }
+        this.clientHandlers.remove(handler);
     }
     public void distributeMsg(String msg) {
         synchronized (handlerListLock) {
@@ -107,6 +106,7 @@ public class ChatServer implements Closeable {
                 if (msg != null && !msg.isEmpty()) {
                     doMessageAction(msg);
                 } else if (msg == null) {
+                    server.removeClient(this);
                     msg = String.format("%s disconnected%n", (nicknamed ? clientID : "client " + clientID));
                     System.out.print(msg);
                     server.distributeMsg(msg);
