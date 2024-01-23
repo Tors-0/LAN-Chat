@@ -98,7 +98,7 @@ public class ChatServer implements Closeable {
             String msg = "";
             while (msg != null) {
                 try {
-                    msg = in.readLine();
+                    msg = in.readLine().trim();
                 } catch (IOException e) {
                     msg = null;
                 }

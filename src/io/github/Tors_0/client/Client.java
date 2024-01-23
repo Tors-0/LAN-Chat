@@ -169,10 +169,9 @@ public class Client {
         Action msgAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String text = msgField.getText();
+                String text = msgField.getText().trim();
                 msgField.setText("");
-                String temp = text.trim();
-                if ("/stop".equals(temp) || "/exit".equals(temp) || "/quit".equals(temp)) {
+                if ("/stop".equals(text) || "/exit".equals(text) || "/quit".equals(text)) {
                     System.out.println("stopping client...");
                     try {
                         close();
