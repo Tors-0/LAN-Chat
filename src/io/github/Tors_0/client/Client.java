@@ -390,8 +390,13 @@ public class Client {
             //Close the port!
             c.close();
         } catch (IOException ex) {
+            if (ex.getClass().equals(BindException.class)) {
+                showAlertMessage("Port already in use by another application", "Port Busy", JOptionPane.INFORMATION_MESSAGE);
+            }
             System.out.println(ex.toString());
-            c.close();
+            if (c != null) {
+                c.close();
+            }
         }
         return serverIPs;
     }
