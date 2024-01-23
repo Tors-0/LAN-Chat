@@ -8,11 +8,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 
 public class ChatServer implements Closeable {
     private ServerSocket serverSocket;
-    private final ArrayList<EchoClientHandler> clientHandlers = new ArrayList<>();
+    private final ArrayList<ChatClientHandler> clientHandlers = new ArrayList<>();
     private final Object handlerListLock = new Object();
     public static final ChatServer server = new ChatServer();
     static Thread discoveryThread;
@@ -38,20 +37,20 @@ public class ChatServer implements Closeable {
         Client.getConnectAction().actionPerformed(null);
         Client.showAlertMessage("Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
         while (true) {
-            EchoClientHandler handler = new EchoClientHandler(serverSocket.accept(), currentClient);
+            ChatClientHandler handler = new ChatClientHandler(serverSocket.accept(), currentClient);
             handler.start();
             clientHandlers.add(handler);
             currentClient++;
         }
     }
-    private void removeClient(EchoClientHandler handler) {
+    private void removeClient(ChatClientHandler handler) {
         synchronized (handlerListLock) {
             this.clientHandlers.remove(handler);
         }
     }
     public void distributeMsg(String msg) {
         synchronized (handlerListLock) {
-            for (EchoClientHandler clientHandler : clientHandlers) {
+            for (ChatClientHandler clientHandler : clientHandlers) {
                 clientHandler.sendMsg(msg);
             }
         }
@@ -59,7 +58,7 @@ public class ChatServer implements Closeable {
     public void stop() throws IOException {
         distributeMsg("Server closed");
         discoveryThread.interrupt();
-        for (EchoClientHandler handler : clientHandlers) {
+        for (ChatClientHandler handler : clientHandlers) {
             handler.closeClient();
         }
         serverStarted = false;
@@ -72,7 +71,7 @@ public class ChatServer implements Closeable {
         stop();
     }
 
-    private static class EchoClientHandler extends Thread {
+    private static class ChatClientHandler extends Thread {
         private final Socket clientSocket;
         private PrintWriter out;
         private BufferedReader in;
@@ -82,7 +81,7 @@ public class ChatServer implements Closeable {
         public String getIP() {
             return clientSocket.getInetAddress().getHostAddress();
         }
-        public EchoClientHandler(Socket socket, int id) {
+        public ChatClientHandler(Socket socket, int id) {
             this.clientSocket = socket;
             this.clientID = String.valueOf(id);
 

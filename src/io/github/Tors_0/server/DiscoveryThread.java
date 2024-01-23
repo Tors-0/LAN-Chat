@@ -15,14 +15,12 @@ import java.util.logging.Logger;
 public class DiscoveryThread extends Thread {
     DatagramSocket socket;
     int port;
-    private boolean stop = false;
     public DiscoveryThread() {
         this.port = ChatServer.getPort();
     }
 
     @Override
     public void interrupt() {
-        stop = true;
         socket.close();
         super.interrupt();
     }
