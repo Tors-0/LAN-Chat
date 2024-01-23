@@ -6,7 +6,7 @@ import javax.swing.*;
 import javax.swing.text.*;
 
 /**
- *  The io.github.Tors_0.client.SmartScroller will attempt to keep the viewport positioned based on
+ *  The SmartScroller will attempt to keep the viewport positioned based on
  *  the users interaction with the scrollbar. The normal behaviour is to keep
  *  the viewport positioned to see new data as it is dynamically added.
  *
@@ -68,7 +68,7 @@ public class SmartScroller implements AdjustmentListener
     }
 
     /**
-     *  Specify how the io.github.Tors_0.client.SmartScroller will function.
+     *  Specify how the SmartScroller will function.
      *
      *  @param scrollPane the scroll pane to monitor
      *  @param scrollDirection indicates which JScrollBar to monitor.

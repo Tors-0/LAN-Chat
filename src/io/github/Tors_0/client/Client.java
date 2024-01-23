@@ -47,7 +47,7 @@ public class Client {
     static boolean connected = false;
     static final int discoveryTimeout = 5000;
 
-    // UDP socket for io.github.Tors_0.server discovery
+    // UDP socket for server discovery
     static DatagramSocket c;
     static ArrayList<String> hosts = new ArrayList<>();
 
@@ -321,13 +321,13 @@ public class Client {
 
     /**
      * Website: <a href="https://michieldemey.be/blog/network-discovery-using-udp-broadcast/">Code Source</a>
-     * @return list of hostname strings found by io.github.Tors_0.server search. length may be 0
+     * @return list of hostname strings found by server search. length may be 0
      * @author Michiel De Mey
      */
     private static ArrayList<String> findLocalServerIPs() {
         ArrayList<String> serverIPs = new ArrayList<>();
 
-        // Find the io.github.Tors_0.server using UDP broadcast
+        // Find the server using UDP broadcast
         try {
             //Open a specific port to send the package
             c = new DatagramSocket(port);
@@ -340,8 +340,7 @@ public class Client {
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName("255.255.255.255"), port);
                 c.send(sendPacket);
                 System.out.println(Client.class.getName() + ">>> Request packet sent to: 255.255.255.255 (DEFAULT)");
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
 
             // Broadcast the message over all the network interfaces
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
