@@ -69,7 +69,10 @@ public class Networking implements Closeable {
         }
     }
     private static class PlaySound {
-        static AudioClip clip = Applet.newAudioClip(PlaySound.class.getResource("/io/github/Tors_0/client/sounds/notify.wav"));
+        /**
+         * source: <a href="https://soundcloud.com/sescini/melodic-1">Melodic 1 - SoundCloud</a>
+         */
+        static AudioClip clip = Applet.newAudioClip(PlaySound.class.getResource("/io/github/Tors_0/client/sounds/melodic.wav"));
         public static void playNotifySound() {
             clip.play();
         }
