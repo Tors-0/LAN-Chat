@@ -214,8 +214,6 @@ public class Client {
                         connected = true;
                         connectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
                         textArea.setText("Connected to " + hostname + " on port " + port);
-
-                        sendToServer("joined");
                     } catch (IOException ex) {
                         if (e != null) {
                             JOptionPane.showMessageDialog(frame, ex.toString(), "Connect Failed", JOptionPane.ERROR_MESSAGE);
