@@ -59,13 +59,10 @@ public class ChatServer implements Closeable {
     public void stop() throws IOException {
         distributeMsg("Server closed");
         discoveryThread.interrupt();
-        serverStarted = false;
         for (EchoClientHandler handler : clientHandlers) {
-            if (handler.getIP().equals("127.0.0.1")) {
-                continue;
-            }
             handler.closeClient();
         }
+        serverStarted = false;
         serverSocket.close();
         clientHandlers.clear();
     }

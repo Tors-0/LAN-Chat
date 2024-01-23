@@ -270,7 +270,7 @@ public class Client {
             public void actionPerformed(ActionEvent e) {
                 if (menuPortField.getText().isEmpty()) return;
                 port = Integer.parseInt(menuPortField.getText());
-                if (port < 1024 || port > 49151) return; // cancel on invalid io.github.Tors_0.server port numbers
+                if (port < 1024 || port > 49151) return; // cancel on invalid server port numbers
 
                 new Thread(() -> {
                     hosts = findLocalServerIPs();

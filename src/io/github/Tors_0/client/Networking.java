@@ -1,5 +1,6 @@
 package io.github.Tors_0.client;
 
+import javax.swing.*;
 import java.applet.Applet;
 import java.applet.AudioClip;
 import java.io.*;
@@ -59,7 +60,7 @@ public class Networking implements Closeable {
                         PlaySound.playNotifySound();
                     }
                     if ("Server closed".equals(msg)) {
-                        Client.getConnectAction().actionPerformed(null);
+                        Client.showAlertMessage("Remote server stopped","Disconnected", JOptionPane.INFORMATION_MESSAGE);
                         break;
                     }
                 }
