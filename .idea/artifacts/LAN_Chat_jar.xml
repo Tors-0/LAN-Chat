@@ -2,7 +2,7 @@
   <artifact type="jar" name="LAN-Chat:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/LAN_Chat_jar</output-path>
     <root id="archive" name="LAN-Chat.jar">
-      <element id="module-output" name="Networking" />
+      <element id="module-output" name="LAN-Chat" />
     </root>
   </artifact>
 </component>
