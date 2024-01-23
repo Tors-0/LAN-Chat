@@ -57,8 +57,8 @@ public class ChatServer implements Closeable {
     public void stop() throws IOException {
         distributeMsg("Server closed");
         discoveryThread.interrupt();
-        for (ChatClientHandler handler : clientHandlers) {
-            handler.closeClient();
+        for (int i = clientHandlers.size()-1; i >= 0; i--) {
+            clientHandlers.get(i).closeClient();
         }
         serverStarted = false;
         serverSocket.close();
@@ -106,7 +106,9 @@ public class ChatServer implements Closeable {
                 if (msg != null && !msg.isEmpty()) {
                     doMessageAction(msg);
                 } else if (msg == null) {
-                    server.removeClient(this);
+                    synchronized (server.handlerListLock) {
+                        server.removeClient(this);
+                    }
                     msg = String.format("%s disconnected%n", (nicknamed ? clientID : "client " + clientID));
                     System.out.print(msg);
                     server.distributeMsg(msg);
