@@ -36,7 +36,9 @@ public class ChatServer implements Closeable {
         Client.setHostname("127.0.0.1");
         serverStarted = true;
         Client.getConnectAction().actionPerformed(null);
-        Client.showAlertMessage("Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
+        new Thread(() -> {
+            Client.showAlertMessage("Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
+        }).start();
         while (true) {
             ChatClientHandler handler = new ChatClientHandler(serverSocket.accept(), currentClient);
             handler.start();
@@ -95,6 +97,8 @@ public class ChatServer implements Closeable {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            out.println("Use \"/help\" to get a list of valid commands from the server");
+            server.distributeMsg("client " + clientID + " joined\n");
             String msg = "";
             while (msg != null) {
                 try {
