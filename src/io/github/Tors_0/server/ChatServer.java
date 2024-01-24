@@ -34,7 +34,7 @@ public class ChatServer implements Closeable {
         discoveryThread.start();
         System.out.println("Listening for clients on port " + port);
         int currentClient = 0;
-        Client.setHostname("127.0.0.1");
+        Client.setHostname("localhost");
         serverStarted = true;
         Client.getConnectAction().actionPerformed(null);
         new Thread(() -> {

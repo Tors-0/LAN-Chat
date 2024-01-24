@@ -289,9 +289,7 @@ public class Client {
                             try {
                                 ChatServer.SERVER.start();
                             } catch (IOException ex) {
-                                if (ex.getClass().equals(SocketException.class)) {
-                                    // JOptionPane.showMessageDialog(frame, "Server closed", "Disconnected", JOptionPane.INFORMATION_MESSAGE);
-                                } else {
+                                if (!ex.getClass().equals(SocketException.class)) {
                                     JOptionPane.showMessageDialog(frame, ex.toString(), "Server Error", JOptionPane.ERROR_MESSAGE);
                                 }
                             }
