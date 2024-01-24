@@ -20,7 +20,7 @@ public class Client {
     static JLabel msgLabel;
     static int port;
     static boolean isMac = PlatformUtil.isMac();
-    static boolean isWindows = PlatformUtil.isWindows();
+    static boolean isLinux = PlatformUtil.isLinux();
     public static int getPort() {
         return port;
     }
@@ -57,12 +57,6 @@ public class Client {
     static ArrayList<String> hosts = new ArrayList<>();
 
     public static void main(String[] args) {
-        windowInit();
-    }
-
-    private static void windowInit() {
-        frame = new ChatFrame("ChatClient");
-
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
@@ -71,6 +65,13 @@ public class Client {
             }).start();
             useFallbackTheme = true;
         }
+
+        windowInit();
+    }
+
+    private static void windowInit() {
+        frame = new ChatFrame("ChatClient");
+
 
         frame.setMinimumSize(new Dimension(520,450));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

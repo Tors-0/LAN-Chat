@@ -53,7 +53,7 @@ public class Networking implements Closeable {
                     Client.addText(msg);
                     if (!Client.frame.isActive()) {
                         // send a toast message
-                        if (!Client.isWindows) {
+                        if (Client.isLinux) {
                             // new thread to avoid queueing toasts
                             String finalMsg = msg;
                             new Thread(() -> {
