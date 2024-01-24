@@ -6,28 +6,32 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.geom.RoundRectangle2D;
 
-class Toast extends JFrame {
+class JFrameToast extends JFrame {
     static int width = 150;
     static int xPos = Toolkit.getDefaultToolkit().getScreenSize().width - width;
     static int height = 50;
     static int yPos = Toolkit.getDefaultToolkit().getScreenSize().height - height;
-    public Toast(final String message) {
+    static JLabel hostnameLabel;
+    static JLabel messageLabel;
+    public JFrameToast() {
         setUndecorated(true);
         setLayout(new GridBagLayout());
-        setBackground(new Color(240,240,240,250));
         setLocationRelativeTo(null);
         setSize(150, 50);
         setFocusable(false);
         setAutoRequestFocus(false);
+        setIconImage(Client.imageIcon);
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 
-        panel.add(new JLabel(Client.hostname,JLabel.LEFT));
-        JLabel label = new JLabel(message,JLabel.LEFT);
-        label.setFont(Font.getFont(Font.SERIF));
-        panel.add(label);
+        hostnameLabel = new JLabel("from: " + Client.hostname,JLabel.LEFT);
+        hostnameLabel.setFont(Font.getFont(Font.MONOSPACED));
+        panel.add(hostnameLabel);
+
+        messageLabel = new JLabel("default message :)",JLabel.LEFT);
+        panel.add(messageLabel);
 
         add(panel);
 
@@ -42,8 +46,10 @@ class Toast extends JFrame {
         });
     }
 
-    public void display() {
+    public void display(String message) {
         try {
+            messageLabel.setText(message);
+
             setOpacity(1);
             setVisible(true);
             setAlwaysOnTop(true);

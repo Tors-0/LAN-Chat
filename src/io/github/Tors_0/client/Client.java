@@ -14,6 +14,8 @@ import java.util.Enumeration;
 public class Client {
     static Networking myNetCon = new Networking();
     static JFrame frame;
+    static boolean useFallbackTheme = false;
+    static Image imageIcon = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/client/resources/lanchat.png"));
     static JTextField msgField;
     static JLabel msgLabel;
     static int port;
@@ -60,8 +62,18 @@ public class Client {
 
     private static void windowInit() {
         frame = new ChatFrame("ChatClient");
+
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                 UnsupportedLookAndFeelException e) {
+            JOptionPane.showMessageDialog(frame,"System Theme not supported, using fallback theme");
+            useFallbackTheme = true;
+        }
+
         frame.setMinimumSize(new Dimension(520,450));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setIconImage(imageIcon);
 
         // begin messaging panel
         textArea = new JTextArea("",25,60);
@@ -72,29 +84,26 @@ public class Client {
         textArea.setBackground(Color.gray);
         textArea.setVisible(true);
 
-        scrollableTextArea = new ModernScrollPane(textArea);
+        scrollableTextArea = new JScrollPane(textArea);
         scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollableTextArea.setSize(500,420);
         new SmartScroller(scrollableTextArea);
 
-        msgLabel = new JLabel("Send a message:");
-        msgLabel.setHorizontalAlignment(JLabel.LEFT);
+        msgLabel = new JLabel("Send a message:", SwingConstants.LEFT);
 
         msgField = new JTextField(60);
-        msgField.setCaretColor(Color.white);
         msgField.setVisible(true);
 
         chatPane = new JPanel();
         chatPane.setLayout(new BoxLayout(chatPane,BoxLayout.Y_AXIS));
         chatPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-        chatPane.setBackground(Color.darkGray);
 
         chatPane.add(scrollableTextArea);
         chatPane.add(Box.createRigidArea(new Dimension(0,5)));
         chatPane.add(msgLabel);
         chatPane.add(msgField);
 
-        colorComponents(chatPane);
 
         // begin config panel
         hostLabel = new JLabel("Current host: " + hostname);
@@ -104,17 +113,14 @@ public class Client {
         configPane = new JPanel();
         configPane.setLayout(new BoxLayout(configPane,BoxLayout.X_AXIS));
         configPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-        configPane.setBackground(Color.darkGray);
 
         configPane.add(hostLabel);
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(connectButton);
 
-        colorComponents(configPane);
 
         menuPortField = new JTextField(5);
         menuPortField.setMaximumSize(new Dimension(150,25));
-        menuPortField.setCaretColor(Color.white);
 
         clientButton = new JButton("Join");
 
@@ -122,7 +128,6 @@ public class Client {
 
         menuPane = new JPanel();
         menuPane.setLayout(new BoxLayout(menuPane,BoxLayout.X_AXIS));
-        menuPane.setBackground(Color.darkGray);
 
         JPanel centeredPanel = new JPanel();
         centeredPanel.setLayout(new BoxLayout(centeredPanel, BoxLayout.Y_AXIS));
@@ -139,7 +144,6 @@ public class Client {
         centeredPanel.add(serverButton);
         centeredPanel.add(Box.createVerticalGlue());
 
-        colorComponents(centeredPanel);
 
         menuPane.add(Box.createHorizontalGlue());
         menuPane.add(centeredPanel);
@@ -148,9 +152,21 @@ public class Client {
         Container contentPane = frame.getContentPane();
         contentPane.add(chatPane, BorderLayout.NORTH);
         contentPane.add(configPane, BorderLayout.SOUTH);
-        contentPane.setBackground(Color.darkGray);
 
-        frame.setBackground(Color.darkGray);
+        if (useFallbackTheme) {
+            msgField.setCaretColor(Color.white);
+            chatPane.setBackground(Color.darkGray);
+            colorComponents(chatPane);
+            configPane.setBackground(Color.darkGray);
+            colorComponents(configPane);
+            menuPortField.setCaretColor(Color.white);
+            menuPane.setBackground(Color.darkGray);
+            colorComponents(centeredPanel);
+            contentPane.setBackground(Color.darkGray);
+            frame.setBackground(Color.darkGray);
+        }
+
+
         frame.pack();
         frame.setResizable(false);
         frame.setVisible(true);

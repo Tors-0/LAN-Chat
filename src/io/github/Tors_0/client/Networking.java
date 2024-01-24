@@ -3,7 +3,6 @@ package io.github.Tors_0.client;
 import javax.swing.*;
 import java.applet.Applet;
 import java.applet.AudioClip;
-import java.awt.*;
 import java.io.*;
 import java.net.Socket;
 
@@ -42,6 +41,7 @@ public class Networking implements Closeable {
         }
         public void run() {
             String msg = "";
+            JFrameToast toast = new JFrameToast();
             while (msg != null) {
                 if (interrupted()) break;
                 try {
@@ -57,18 +57,14 @@ public class Networking implements Closeable {
                             // new thread to avoid queueing toasts
                             String finalMsg = msg;
                             new Thread(() -> {
-                                new Toast(finalMsg).display();
+                                toast.display(finalMsg);
                             }).start();
 
                             // make a little noise :3
                             PlaySound.playNotifySound();
                         } else {
                             // for Windows, we use the native notifications
-                            try {
-                                SysTrayToast.display(msg);
-                            } catch (AWTException e) {
-                                throw new RuntimeException(e);
-                            }
+                            SysTrayToast.display(msg);
                             // don't make a little noise because Windows has one already
                         }
                     }
