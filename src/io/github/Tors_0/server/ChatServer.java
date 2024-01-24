@@ -11,10 +11,11 @@ import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ChatServer implements Closeable {
+    public static final ChatServer SERVER = new ChatServer();
     private ServerSocket serverSocket;
-    private final ArrayList<ChatClientHandler> clientHandlers = new ArrayList<>();
-    private final ReentrantLock handlerListLock = new ReentrantLock();
-    public static final ChatServer server = new ChatServer();
+    private final ArrayList<ChatClientHandler> CLIENT_HANDLERS = new ArrayList<>();
+    private final ReentrantLock CLIENT_HANDLERS_LOCK = new ReentrantLock();
+    private final HashMap<String, String> IP_NAME_MAP = new HashMap<>();
     static Thread discoveryThread;
     static int port;
     public static int getPort() {
@@ -42,16 +43,16 @@ public class ChatServer implements Closeable {
         while (true) {
             ChatClientHandler handler = new ChatClientHandler(serverSocket.accept(), currentClient);
             handler.start();
-            clientHandlers.add(handler);
+            CLIENT_HANDLERS.add(handler);
             currentClient++;
         }
     }
     private void removeClient(ChatClientHandler handler) {
-        this.clientHandlers.remove(handler);
+        this.CLIENT_HANDLERS.remove(handler);
     }
     public void distributeMsg(String msg) {
-        synchronized (handlerListLock) {
-            for (ChatClientHandler clientHandler : clientHandlers) {
+        synchronized (CLIENT_HANDLERS_LOCK) {
+            for (ChatClientHandler clientHandler : CLIENT_HANDLERS) {
                 clientHandler.sendMsg(msg);
             }
         }
@@ -59,12 +60,12 @@ public class ChatServer implements Closeable {
     public void stop() throws IOException {
         distributeMsg("Server closed");
         discoveryThread.interrupt();
-        for (int i = clientHandlers.size()-1; i >= 0; i--) {
-            clientHandlers.get(i).closeClient();
+        for (int i = CLIENT_HANDLERS.size()-1; i >= 0; i--) {
+            CLIENT_HANDLERS.get(i).closeClient();
         }
         serverStarted = false;
         serverSocket.close();
-        clientHandlers.clear();
+        CLIENT_HANDLERS.clear();
     }
 
     @Override
@@ -78,13 +79,12 @@ public class ChatServer implements Closeable {
         private BufferedReader in;
         private String clientID;
         private boolean nicknamed = false;
+        private final String IP;
         private final HashMap<String, String> commandRegistry = new HashMap<>();
-        public String getIP() {
-            return clientSocket.getInetAddress().getHostAddress();
-        }
         public ChatClientHandler(Socket socket, int id) {
             this.clientSocket = socket;
             this.clientID = String.valueOf(id);
+            this.IP = clientSocket.getInetAddress().getHostAddress();
 
             this.commandRegistry.put("/help", "Displays all valid commands");
             this.commandRegistry.put("/nickname NICKNAME_HERE", "Changes your nickname (" + maxNicknameLength + " char limit)");
@@ -98,7 +98,7 @@ public class ChatServer implements Closeable {
                 throw new RuntimeException(e);
             }
             out.println("Use \"/help\" to get a list of valid commands from the server");
-            server.distributeMsg("client " + clientID + " joined\n");
+            SERVER.distributeMsg("client " + clientID + " joined\n");
             String msg = "";
             while (msg != null) {
                 try {
@@ -110,12 +110,12 @@ public class ChatServer implements Closeable {
                 if (msg != null && !msg.isEmpty()) {
                     doMessageAction(msg);
                 } else if (msg == null) {
-                    synchronized (server.handlerListLock) {
-                        server.removeClient(this);
+                    synchronized (SERVER.CLIENT_HANDLERS_LOCK) {
+                        SERVER.removeClient(this);
                     }
                     msg = String.format("%s disconnected%n", (nicknamed ? clientID : "client " + clientID));
                     System.out.print(msg);
-                    server.distributeMsg(msg);
+                    SERVER.distributeMsg(msg);
                     break;
                 }
             }
@@ -128,12 +128,15 @@ public class ChatServer implements Closeable {
                 });
                 out.println("\n");
             } else if (text.startsWith("/nickname")) {
-                String newName = text.substring(9);
-                if (!newName.trim().isEmpty()) {
-                    if (newName.trim().length() <= ChatServer.maxNicknameLength) {
-                        server.distributeMsg((nicknamed ? clientID : "client " + clientID) + " changed nickname to " + newName.trim());
-                        clientID = newName.trim();
+                String newName = text.substring(9).trim();
+                if (!newName.isEmpty()) {
+                    if (SERVER.IP_NAME_MAP.containsValue(newName.toLowerCase()) && !newName.equalsIgnoreCase(SERVER.IP_NAME_MAP.get(IP))) {
+                        this.out.printf("Nickname \"%s\" already taken on this server%n", newName);
+                    } else if (newName.length() <= ChatServer.maxNicknameLength) {
+                        SERVER.distributeMsg((nicknamed ? clientID : "client " + clientID) + " changed nickname to " + newName);
+                        clientID = newName;
                         nicknamed = true;
+                        SERVER.IP_NAME_MAP.put(IP,clientID.toLowerCase());
                     } else {
                         this.out.println("Nickname must not exceed length " + ChatServer.maxNicknameLength);
                     }
@@ -145,7 +148,7 @@ public class ChatServer implements Closeable {
             } else {
                 text = String.format("%s: %s%n", (nicknamed ? clientID : "client " + clientID), text);
                 System.out.print(text);
-                server.distributeMsg(text);
+                SERVER.distributeMsg(text);
             }
         }
         public void closeClient() {

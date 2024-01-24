@@ -201,7 +201,7 @@ public class Client {
                 if (connected) {
                     try {
                         if (ChatServer.isServerStarted()) {
-                            ChatServer.server.stop();
+                            ChatServer.SERVER.stop();
                         }
 
                         myNetCon.close();
@@ -287,7 +287,7 @@ public class Client {
                     if (hosts.isEmpty()) {
                         new Thread(() -> {
                             try {
-                                ChatServer.server.start();
+                                ChatServer.SERVER.start();
                             } catch (IOException ex) {
                                 if (ex.getClass().equals(SocketException.class)) {
                                     // JOptionPane.showMessageDialog(frame, "Server closed", "Disconnected", JOptionPane.INFORMATION_MESSAGE);
@@ -422,7 +422,7 @@ public class Client {
 
     public static void close() throws IOException {
         if (ChatServer.isServerStarted()) {
-            ChatServer.server.stop();
+            ChatServer.SERVER.stop();
         }
         if (connected) {
             myNetCon.close();
