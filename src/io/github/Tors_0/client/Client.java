@@ -1,7 +1,7 @@
 package io.github.Tors_0.client;
 
-import com.sun.javafx.PlatformUtil;
 import io.github.Tors_0.server.ChatServer;
+import io.github.Tors_0.util.SystemInfo;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,8 +19,8 @@ public class Client {
     static JTextField msgField;
     static JLabel msgLabel;
     static int port;
-    static final boolean IS_MAC = PlatformUtil.isMac();
-    static final boolean IS_LINUX = PlatformUtil.isLinux();
+    static final boolean IS_MAC = SystemInfo.isMac();
+    static final boolean IS_LINUX = SystemInfo.isLinux();
     public static int getPort() {
         return port;
     }
