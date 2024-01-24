@@ -20,7 +20,7 @@ class JFrameToast extends JFrame {
         setSize(150, 50);
         setFocusable(false);
         setAutoRequestFocus(false);
-        setIconImage(Client.imageIcon);
+        setIconImage(Client.IMAGE);
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));

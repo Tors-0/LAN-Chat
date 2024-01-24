@@ -14,13 +14,13 @@ import java.util.Enumeration;
 public class Client {
     static Networking myNetCon = new Networking();
     static JFrame frame;
-    static boolean useFallbackTheme = false;
-    static Image imageIcon = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/client/resources/lanchat.png"));
+    private static boolean useFallbackTheme = false;
+    static final Image IMAGE = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/client/resources/lanchat.png"));
     static JTextField msgField;
     static JLabel msgLabel;
     static int port;
-    static boolean isMac = PlatformUtil.isMac();
-    static boolean isLinux = PlatformUtil.isLinux();
+    static final boolean IS_MAC = PlatformUtil.isMac();
+    static final boolean IS_LINUX = PlatformUtil.isLinux();
     public static int getPort() {
         return port;
     }
@@ -75,11 +75,10 @@ public class Client {
 
         frame.setMinimumSize(new Dimension(520,450));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setIconImage(imageIcon);
+        frame.setIconImage(IMAGE);
 
         // begin messaging panel
-        textArea = new JTextArea("",25,60);
-        textArea.setSize(500,230);
+        textArea = new JTextArea(17,60);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
         textArea.setForeground(Color.white);
@@ -89,7 +88,6 @@ public class Client {
         scrollableTextArea = useFallbackTheme ? new ModernScrollPane(textArea) : new JScrollPane(textArea);
         scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollableTextArea.setSize(500,420);
         new SmartScroller(scrollableTextArea);
 
         msgLabel = new JLabel("Send a message:", SwingConstants.LEFT);
@@ -170,7 +168,6 @@ public class Client {
 
 
         frame.pack();
-        frame.setResizable(false);
         frame.setVisible(true);
 
         chatPane.setVisible(false);
@@ -314,7 +311,7 @@ public class Client {
         for (Component comp : component.getComponents()) {
             comp.setBackground(Color.gray);
             comp.setForeground(Color.white);
-            if (comp instanceof JButton && isMac) {
+            if (comp instanceof JButton && IS_MAC) {
                 ((JButton) comp).setOpaque(true);
                 ((JButton) comp).setBorderPainted(false);
             }
