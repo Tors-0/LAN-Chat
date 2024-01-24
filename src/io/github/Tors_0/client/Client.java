@@ -18,6 +18,8 @@ public class Client {
     static final Image IMAGE = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/client/resources/lanchat.png"));
     static JTextField msgField;
     static JLabel msgLabel;
+    static JButton sendButton;
+    static JPanel msgPane;
     static int port;
     static final boolean IS_MAC = SystemInfo.isMac();
     static final boolean IS_LINUX = SystemInfo.isLinux();
@@ -78,11 +80,10 @@ public class Client {
         frame.setIconImage(IMAGE);
 
         // begin messaging panel
-        textArea = new JTextArea(17,60);
+        textArea = new JTextArea();
+        textArea.setRows(20);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
-        textArea.setForeground(Color.white);
-        textArea.setBackground(Color.gray);
         textArea.setVisible(true);
 
         scrollableTextArea = useFallbackTheme ? new ModernScrollPane(textArea) : new JScrollPane(textArea);
@@ -90,10 +91,20 @@ public class Client {
         scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         new SmartScroller(scrollableTextArea);
 
-        msgLabel = new JLabel("Send a message:", SwingConstants.LEFT);
+        msgLabel = new JLabel("Send a message: ", SwingConstants.LEFT);
 
-        msgField = new JTextField(60);
+        msgField = new JTextField();
         msgField.setVisible(true);
+
+        sendButton = new JButton("Send");
+
+        msgPane = new JPanel();
+        msgPane.setLayout(new BoxLayout(msgPane,BoxLayout.X_AXIS));
+
+        msgPane.add(msgLabel);
+        msgPane.add(msgField);
+        msgPane.add(Box.createRigidArea(new Dimension(5,0)));
+        msgPane.add(sendButton);
 
         chatPane = new JPanel();
         chatPane.setLayout(new BoxLayout(chatPane,BoxLayout.Y_AXIS));
@@ -101,8 +112,7 @@ public class Client {
 
         chatPane.add(scrollableTextArea);
         chatPane.add(Box.createRigidArea(new Dimension(0,5)));
-        chatPane.add(msgLabel);
-        chatPane.add(msgField);
+        chatPane.add(msgPane);
 
 
         // begin config panel
@@ -129,6 +139,16 @@ public class Client {
         menuPane = new JPanel();
         menuPane.setLayout(new BoxLayout(menuPane,BoxLayout.X_AXIS));
 
+        JPanel inputPane = new JPanel();
+        inputPane.setLayout(new BoxLayout(inputPane,BoxLayout.X_AXIS));
+
+        inputPane.add(menuPortField);
+        inputPane.add(Box.createRigidArea(new Dimension(5,0)));
+        inputPane.add(clientButton);
+        inputPane.add(Box.createRigidArea(new Dimension(5,0)));
+        inputPane.add(serverButton);
+
+
         JPanel centeredPanel = new JPanel();
         centeredPanel.setLayout(new BoxLayout(centeredPanel, BoxLayout.Y_AXIS));
 
@@ -136,11 +156,7 @@ public class Client {
         centeredPanel.add(new JLabel("LAN Chat"));
         centeredPanel.add(new JLabel("Enter port from 1024-49151 below"));
         centeredPanel.add(Box.createRigidArea(new Dimension(0,5)));
-        centeredPanel.add(menuPortField);
-        centeredPanel.add(Box.createRigidArea(new Dimension(0,5)));
-        centeredPanel.add(clientButton);
-        centeredPanel.add(Box.createRigidArea(new Dimension(0,5)));
-        centeredPanel.add(serverButton);
+        centeredPanel.add(inputPane);
         centeredPanel.add(Box.createVerticalGlue());
 
 
@@ -153,6 +169,8 @@ public class Client {
         contentPane.add(configPane, BorderLayout.SOUTH);
 
         if (useFallbackTheme) {
+            textArea.setForeground(Color.white);
+            textArea.setBackground(Color.gray);
             msgField.setCaretColor(Color.white);
             chatPane.setBackground(Color.darkGray);
             colorComponents(chatPane);
@@ -168,6 +186,7 @@ public class Client {
 
 
         frame.pack();
+        frame.setResizable(false);
         frame.setVisible(true);
 
         chatPane.setVisible(false);
@@ -193,6 +212,7 @@ public class Client {
             }
         };
         msgField.addActionListener(msgAction);
+        sendButton.addActionListener(msgAction);
         connectAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -279,6 +299,7 @@ public class Client {
                 if (menuPortField.getText().isEmpty()) return;
                 port = Integer.parseInt(menuPortField.getText());
                 if (port < 1024 || port > 49151) return; // cancel on invalid server port numbers
+                serverButton.setEnabled(false);
 
                 new Thread(() -> {
                     hosts = findLocalServerIPs();
@@ -302,6 +323,7 @@ public class Client {
                             connectAction.actionPerformed(e);
                         }
                     }
+                    serverButton.setEnabled(true);
                 }).start();
             }
         };
@@ -312,6 +334,7 @@ public class Client {
             comp.setBackground(Color.gray);
             comp.setForeground(Color.white);
             if (comp instanceof JButton && IS_MAC) {
+                comp.setForeground(Color.lightGray);
                 ((JButton) comp).setOpaque(true);
                 ((JButton) comp).setBorderPainted(false);
             }
