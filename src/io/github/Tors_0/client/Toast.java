@@ -46,6 +46,7 @@ class Toast extends JFrame {
         try {
             setOpacity(1);
             setVisible(true);
+            setAlwaysOnTop(true);
             Thread.sleep(2000);
 
             //hide the toast message in slow motion
@@ -57,7 +58,7 @@ class Toast extends JFrame {
             // set the visibility to false
             setVisible(false);
         }catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println(e.getMessage() + " from toast");
         }
     }
 }

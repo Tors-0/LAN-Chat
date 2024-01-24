@@ -3,6 +3,7 @@ package io.github.Tors_0.client;
 import javax.swing.*;
 import java.applet.Applet;
 import java.applet.AudioClip;
+import java.awt.*;
 import java.io.*;
 import java.net.Socket;
 
@@ -50,11 +51,19 @@ public class Networking implements Closeable {
                     Client.addText(msg);
                     if (!Client.frame.isActive()) {
                         // send a toast message
-                        // new thread to avoid queueing toasts
-                        String finalMsg = msg;
-                        new Thread(() -> {
-                            new Toast(finalMsg).display();
-                        }).start();
+                        if (!Client.isWindows) {
+                            // new thread to avoid queueing toasts
+                            String finalMsg = msg;
+                            new Thread(() -> {
+                                new Toast(finalMsg).display();
+                            }).start();
+                        } else {
+                            try {
+                                SysTrayToast.display(msg);
+                            } catch (AWTException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
 
                         // make a little noise :3
                         PlaySound.playNotifySound();
@@ -72,7 +81,7 @@ public class Networking implements Closeable {
         /**
          * source: <a href="https://soundcloud.com/sescini/melodic-1">Melodic 1 - SoundCloud</a>
          */
-        static AudioClip clip = Applet.newAudioClip(PlaySound.class.getResource("/io/github/Tors_0/client/sounds/melodic.wav"));
+        static AudioClip clip = Applet.newAudioClip(PlaySound.class.getResource("/io/github/Tors_0/client/resources/melodic.wav"));
         public static void playNotifySound() {
             clip.play();
         }

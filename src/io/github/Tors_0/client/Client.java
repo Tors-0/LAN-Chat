@@ -1,5 +1,6 @@
 package io.github.Tors_0.client;
 
+import com.sun.javafx.PlatformUtil;
 import io.github.Tors_0.server.ChatServer;
 
 import javax.swing.*;
@@ -16,6 +17,8 @@ public class Client {
     static JTextField msgField;
     static JLabel msgLabel;
     static int port;
+    static boolean isMac = PlatformUtil.isMac();
+    static boolean isWindows = PlatformUtil.isWindows();
     public static int getPort() {
         return port;
     }
@@ -91,10 +94,7 @@ public class Client {
         chatPane.add(msgLabel);
         chatPane.add(msgField);
 
-        for (Component comp : chatPane.getComponents()) {
-            comp.setBackground(Color.gray);
-            comp.setForeground(Color.white);
-        }
+        colorComponents(chatPane);
 
         // begin config panel
         hostLabel = new JLabel("Current host: " + hostname);
@@ -110,10 +110,7 @@ public class Client {
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(connectButton);
 
-        for (Component comp : configPane.getComponents()) {
-            comp.setBackground(Color.gray);
-            comp.setForeground(Color.white);
-        }
+        colorComponents(configPane);
 
         menuPortField = new JTextField(5);
         menuPortField.setMaximumSize(new Dimension(150,25));
@@ -142,10 +139,7 @@ public class Client {
         centeredPanel.add(serverButton);
         centeredPanel.add(Box.createVerticalGlue());
 
-        for (Component comp : centeredPanel.getComponents()) {
-            comp.setBackground(Color.gray);
-            comp.setForeground(Color.white);
-        }
+        colorComponents(centeredPanel);
 
         menuPane.add(Box.createHorizontalGlue());
         menuPane.add(centeredPanel);
@@ -299,6 +293,16 @@ public class Client {
             }
         };
         serverButton.addActionListener(hostAction);
+    }
+    private static void colorComponents(JComponent component) {
+        for (Component comp : component.getComponents()) {
+            comp.setBackground(Color.gray);
+            comp.setForeground(Color.white);
+            if (comp instanceof JButton && isMac) {
+                ((JButton) comp).setOpaque(true);
+                ((JButton) comp).setBorderPainted(false);
+            }
+        }
     }
     public static void showAlertMessage(String msg, String name, int messageType) {
         JOptionPane.showMessageDialog(frame,msg,name,messageType);
