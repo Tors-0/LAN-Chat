@@ -103,10 +103,8 @@ public class ChatServer implements Closeable {
             while (msg != null) {
                 try {
                     msg = in.readLine().trim();
-                } catch (IOException e) {
+                } catch (IOException | NullPointerException e) {
                     msg = null;
-                } catch (NullPointerException ex) {
-                    System.out.println("client " + clientID + " gone");
                 }
 
                 if (msg != null && !msg.isEmpty()) {

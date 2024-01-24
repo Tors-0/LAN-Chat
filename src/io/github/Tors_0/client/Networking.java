@@ -46,7 +46,9 @@ public class Networking implements Closeable {
                 if (interrupted()) break;
                 try {
                     msg = in.readLine();
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                    msg = null;
+                }
                 if (msg != null && !msg.isEmpty()) {
                     Client.addText(msg);
                     if (!Client.frame.isActive()) {
