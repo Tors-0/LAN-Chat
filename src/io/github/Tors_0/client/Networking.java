@@ -22,7 +22,7 @@ public class Networking implements Closeable {
         worker = new PrintInputStream(in);
         worker.start();
     }
-    public void sendMsg(String msg) throws IOException {
+    public void sendMsg(String msg) {
         out.println(msg);
     }
     @Override
@@ -59,16 +59,18 @@ public class Networking implements Closeable {
                             new Thread(() -> {
                                 new Toast(finalMsg).display();
                             }).start();
+
+                            // make a little noise :3
+                            PlaySound.playNotifySound();
                         } else {
+                            // for Windows, we use the native notifications
                             try {
                                 SysTrayToast.display(msg);
                             } catch (AWTException e) {
                                 throw new RuntimeException(e);
                             }
+                            // don't make a little noise because Windows has one already
                         }
-
-                        // make a little noise :3
-                        PlaySound.playNotifySound();
                     }
                     if ("Server closed".equals(msg)) {
                         Client.showAlertMessage("Server stopped by host","Disconnected", JOptionPane.INFORMATION_MESSAGE);
