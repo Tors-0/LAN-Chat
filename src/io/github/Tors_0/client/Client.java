@@ -65,9 +65,10 @@ public class Client {
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                 UnsupportedLookAndFeelException e) {
-            JOptionPane.showMessageDialog(frame,"System Theme not supported, using fallback theme");
+        } catch (Exception e) {
+            new Thread(() -> {
+                JOptionPane.showMessageDialog(frame, "System Theme not supported, using fallback theme");
+            }).start();
             useFallbackTheme = true;
         }
 
@@ -84,7 +85,7 @@ public class Client {
         textArea.setBackground(Color.gray);
         textArea.setVisible(true);
 
-        scrollableTextArea = new JScrollPane(textArea);
+        scrollableTextArea = useFallbackTheme ? new ModernScrollPane(textArea) : new JScrollPane(textArea);
         scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollableTextArea.setSize(500,420);
@@ -131,7 +132,6 @@ public class Client {
 
         JPanel centeredPanel = new JPanel();
         centeredPanel.setLayout(new BoxLayout(centeredPanel, BoxLayout.Y_AXIS));
-        centeredPanel.setBackground(Color.darkGray);
 
         centeredPanel.add(Box.createVerticalGlue());
         centeredPanel.add(new JLabel("LAN Chat"));
@@ -161,6 +161,7 @@ public class Client {
             colorComponents(configPane);
             menuPortField.setCaretColor(Color.white);
             menuPane.setBackground(Color.darkGray);
+            centeredPanel.setBackground(Color.darkGray);
             colorComponents(centeredPanel);
             contentPane.setBackground(Color.darkGray);
             frame.setBackground(Color.darkGray);
