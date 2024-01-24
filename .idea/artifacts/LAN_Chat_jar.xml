@@ -3,7 +3,6 @@
     <output-path>$PROJECT_DIR$/out/artifacts/LAN_Chat_jar</output-path>
     <root id="archive" name="LAN-Chat.jar">
       <element id="module-output" name="LAN-Chat" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/commons-lang3-3.14.0-bin.zip" path-in-jar="/" />
     </root>
   </artifact>
 </component>
