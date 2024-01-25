@@ -6,20 +6,9 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 
 public class ChatFrame extends JFrame {
-    public ChatFrame() throws HeadlessException {
-        super();
-    }
-
-    public ChatFrame(GraphicsConfiguration gc) {
-        super(gc);
-    }
 
     public ChatFrame(String title) throws HeadlessException {
         super(title);
-    }
-
-    public ChatFrame(String title, GraphicsConfiguration gc) {
-        super(title, gc);
     }
 
     @Override

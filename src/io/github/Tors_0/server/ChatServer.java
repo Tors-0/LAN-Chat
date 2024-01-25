@@ -41,7 +41,13 @@ public class ChatServer implements Closeable {
             Client.showAlertMessage("Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
         }).start();
         while (true) {
-            ChatClientHandler handler = new ChatClientHandler(serverSocket.accept(), currentClient);
+            Socket clientSocket = serverSocket.accept();
+            String ip = clientSocket.getInetAddress().getHostAddress();
+            boolean reconnect = IP_NAME_MAP.containsKey(ip);
+            ChatClientHandler handler = new ChatClientHandler(
+                    clientSocket,
+                    reconnect ? IP_NAME_MAP.get(ip) : String.valueOf(currentClient),
+                    reconnect);
             handler.start();
             CLIENT_HANDLERS.add(handler);
             currentClient++;
@@ -80,15 +86,17 @@ public class ChatServer implements Closeable {
         private String clientID;
         private boolean nicknamed = false;
         private final String IP;
-        private final HashMap<String, String> commandRegistry = new HashMap<>();
-        public ChatClientHandler(Socket socket, int id) {
+        private static final HashMap<String, String> commandRegistry = new HashMap<>();
+        static {
+            commandRegistry.put("/help", "Displays all valid commands");
+            commandRegistry.put("/nickname NICKNAME_HERE", "Changes your nickname (" + maxNicknameLength + " char limit)");
+            commandRegistry.put("/stop\", \"/exit\", \"/quit", "Disconnects you, closes server if you are host, and closes the window");
+        }
+        public ChatClientHandler(Socket socket, String id, boolean nicknamed) {
             this.clientSocket = socket;
-            this.clientID = String.valueOf(id);
+            this.clientID = id;
             this.IP = clientSocket.getInetAddress().getHostAddress();
-
-            this.commandRegistry.put("/help", "Displays all valid commands");
-            this.commandRegistry.put("/nickname NICKNAME_HERE", "Changes your nickname (" + maxNicknameLength + " char limit)");
-            this.commandRegistry.put("/stop\", \"/exit\", \"/quit", "Disconnects you, closes server if you are host, and closes the window");
+            this.nicknamed = nicknamed;
         }
         public void run() {
             try {
@@ -98,7 +106,7 @@ public class ChatServer implements Closeable {
                 throw new RuntimeException(e);
             }
             out.println("Use \"/help\" to get a list of valid commands from the server");
-            SERVER.distributeMsg("client " + clientID + " joined\n");
+            SERVER.distributeMsg((nicknamed ? clientID : "client " + clientID) + " joined\n");
             String msg = "";
             while (msg != null) {
                 try {
