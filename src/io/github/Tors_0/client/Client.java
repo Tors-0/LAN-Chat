@@ -1,9 +1,12 @@
 package io.github.Tors_0.client;
 
 import io.github.Tors_0.server.ChatServer;
+import io.github.Tors_0.util.Fonts;
+import io.github.Tors_0.util.LimitDocumentFilter;
 import io.github.Tors_0.util.SystemInfo;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
@@ -75,7 +78,7 @@ public class Client {
         frame = new ChatFrame("ChatClient");
 
 
-        frame.setMinimumSize(new Dimension(520,450));
+        frame.setMinimumSize(new Dimension(600,430));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setIconImage(IMAGE);
 
@@ -120,6 +123,17 @@ public class Client {
 
         connectButton = new JButton(DISCONNECT);
 
+        JToggleButton soundToggle = new JToggleButton("Sound ON");
+        soundToggle.addActionListener(new AbstractAction() {
+            private boolean muted = false;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                muted = !muted;
+                soundToggle.setText("Sound " + (muted ? "OFF" : "ON"));
+                Networking.PlaySound.setMuted(muted);
+            }
+        });
+
         configPane = new JPanel();
         configPane.setLayout(new BoxLayout(configPane,BoxLayout.X_AXIS));
         configPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
@@ -127,23 +141,31 @@ public class Client {
         configPane.add(hostLabel);
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(connectButton);
+        if (IS_LINUX) {
+            configPane.add(Box.createRigidArea(new Dimension(5, 0)));
+            configPane.add(soundToggle);
+        }
 
 
         menuPortField = new JTextField(5);
-        menuPortField.setMaximumSize(new Dimension(150,25));
+        menuPortField.setToolTipText("Enter a number from 1024 to 49151");
+        ((AbstractDocument) menuPortField.getDocument()).setDocumentFilter(new LimitDocumentFilter(5));
 
         clientButton = new JButton("Join");
+        clientButton.setFont(Fonts.H1);
 
         serverButton = new JButton("Host");
+        serverButton.setFont(Fonts.H1);
 
         menuPane = new JPanel();
         menuPane.setLayout(new BoxLayout(menuPane,BoxLayout.X_AXIS));
 
         JPanel inputPane = new JPanel();
         inputPane.setLayout(new BoxLayout(inputPane,BoxLayout.X_AXIS));
+        inputPane.setMaximumSize(new Dimension(300, clientButton.getHeight()));
 
-        inputPane.add(menuPortField);
-        inputPane.add(Box.createRigidArea(new Dimension(5,0)));
+//        inputPane.add(menuPortField);
+//        inputPane.add(Box.createRigidArea(new Dimension(5,0)));
         inputPane.add(clientButton);
         inputPane.add(Box.createRigidArea(new Dimension(5,0)));
         inputPane.add(serverButton);
@@ -153,16 +175,13 @@ public class Client {
         centeredPanel.setLayout(new BoxLayout(centeredPanel, BoxLayout.Y_AXIS));
 
         centeredPanel.add(Box.createVerticalGlue());
-        centeredPanel.add(new JLabel("LAN Chat"));
-        centeredPanel.add(new JLabel("Enter port from 1024-49151 below"));
-        centeredPanel.add(Box.createRigidArea(new Dimension(0,5)));
         centeredPanel.add(inputPane);
         centeredPanel.add(Box.createVerticalGlue());
-
 
         menuPane.add(Box.createHorizontalGlue());
         menuPane.add(centeredPanel);
         menuPane.add(Box.createHorizontalGlue());
+
 
         Container contentPane = frame.getContentPane();
         contentPane.add(chatPane, BorderLayout.NORTH);
@@ -283,7 +302,8 @@ public class Client {
         Action joinAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (menuPortField.getText().isEmpty()) return;
+                inputPortNumber();
+                if (menuPortField.getText().isEmpty() || !isValidPort(menuPortField.getText())) return;
                 port = Integer.parseInt(menuPortField.getText());
                 if (port < 1024 || port > 49151) return; // cancel on invalid port numbers
 
@@ -296,7 +316,8 @@ public class Client {
         Action hostAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (menuPortField.getText().isEmpty()) return;
+                inputPortNumber();
+                if (menuPortField.getText().isEmpty() || !isValidPort(menuPortField.getText())) return;
                 port = Integer.parseInt(menuPortField.getText());
                 if (port < 1024 || port > 49151) return; // cancel on invalid server port numbers
                 serverButton.setEnabled(false);
@@ -328,6 +349,14 @@ public class Client {
             }
         };
         serverButton.addActionListener(hostAction);
+    }
+
+    private static void inputPortNumber() {
+        menuPortField.setText(JOptionPane.showInputDialog(frame,"Please input a port number from 1024 to 49151","Select Port", JOptionPane.INFORMATION_MESSAGE));
+    }
+
+    public static boolean isValidPort(String text) {
+        return  (text.length() == 4 || text.length() == 5) && text.matches("[0-9]+");
     }
     private static void colorComponents(JComponent component) {
         for (Component comp : component.getComponents()) {
