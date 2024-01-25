@@ -146,11 +146,6 @@ public class Client {
             configPane.add(soundToggle);
         }
 
-
-        menuPortField = new JTextField(5);
-        menuPortField.setToolTipText("Enter a number from 1024 to 49151");
-        ((AbstractDocument) menuPortField.getDocument()).setDocumentFilter(new LimitDocumentFilter(5));
-
         clientButton = new JButton("Join");
         clientButton.setFont(Fonts.H1);
 
@@ -164,8 +159,6 @@ public class Client {
         inputPane.setLayout(new BoxLayout(inputPane,BoxLayout.X_AXIS));
         inputPane.setMaximumSize(new Dimension(300, clientButton.getHeight()));
 
-//        inputPane.add(menuPortField);
-//        inputPane.add(Box.createRigidArea(new Dimension(5,0)));
         inputPane.add(clientButton);
         inputPane.add(Box.createRigidArea(new Dimension(5,0)));
         inputPane.add(serverButton);
@@ -302,9 +295,9 @@ public class Client {
         Action joinAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                inputPortNumber();
-                if (menuPortField.getText().isEmpty() || !isValidPort(menuPortField.getText())) return;
-                port = Integer.parseInt(menuPortField.getText());
+                String txt = inputPortNumber();
+                if (txt.isEmpty() || !isValidPort(txt)) return;
+                port = Integer.parseInt(txt);
                 if (port < 1024 || port > 49151) return; // cancel on invalid port numbers
 
                 searchAction.actionPerformed(e);
@@ -312,13 +305,12 @@ public class Client {
             }
         };
         clientButton.addActionListener(joinAction);
-        menuPortField.addActionListener(joinAction);
         Action hostAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                inputPortNumber();
-                if (menuPortField.getText().isEmpty() || !isValidPort(menuPortField.getText())) return;
-                port = Integer.parseInt(menuPortField.getText());
+                String txt = inputPortNumber();
+                if (txt.isEmpty() || !isValidPort(txt)) return;
+                port = Integer.parseInt(txt);
                 if (port < 1024 || port > 49151) return; // cancel on invalid server port numbers
                 serverButton.setEnabled(false);
 
@@ -351,8 +343,8 @@ public class Client {
         serverButton.addActionListener(hostAction);
     }
 
-    private static void inputPortNumber() {
-        menuPortField.setText(JOptionPane.showInputDialog(frame,"Please input a port number from 1024 to 49151","Select Port", JOptionPane.INFORMATION_MESSAGE));
+    private static String inputPortNumber() {
+        return JOptionPane.showInputDialog(frame,"Please input a port number from 1024 to 49151","Select Port", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public static boolean isValidPort(String text) {
