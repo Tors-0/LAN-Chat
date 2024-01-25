@@ -63,9 +63,9 @@ public class Networking implements Closeable {
                             // make a little noise :3
                             PlaySound.playNotifySound();
                         } else {
-                            // for Windows, we use the native notifications
+                            // for Windows and Mac, we use the native notifications :o
                             SysTrayToast.display(msg);
-                            // don't make a little noise because Windows has one already
+                            // don't make a little noise because Windows has one already :(
                         }
                     }
                     if ("Server closed".equals(msg)) {
