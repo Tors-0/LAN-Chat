@@ -1,6 +1,8 @@
 package io.github.Tors_0.client;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 
 public class SysTrayToast {
     static Image icon = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/client/resources/lanchat.png"));
@@ -8,6 +10,13 @@ public class SysTrayToast {
     static TrayIcon trayIcon = new TrayIcon(icon,"LAN-Chat");
     static {
         trayIcon.setImageAutoSize(true);
+        trayIcon.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Client.frame.setState(JFrame.NORMAL);
+                Client.frame.toFront();
+            }
+        });
 
         try {
             tray.add(trayIcon);
