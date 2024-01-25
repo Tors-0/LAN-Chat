@@ -4,21 +4,33 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowEvent;
 import java.awt.geom.RoundRectangle2D;
 
 class JFrameToast extends JFrame {
-    static int width = 150;
+    static int width = 200;
     static int xPos = Toolkit.getDefaultToolkit().getScreenSize().width - width;
-    static int height = 50;
+    static int height = 65;
     static int yPos = Toolkit.getDefaultToolkit().getScreenSize().height - height;
     static JLabel hostnameLabel;
     static JLabel messageLabel;
+
+    @Override
+    protected void processWindowEvent(WindowEvent e) {
+        if (WindowEvent.WINDOW_ACTIVATED == e.getID()) {
+            Client.frame.setState(JFrame.NORMAL);
+            Client.frame.toFront();
+            this.setVisible(false);
+        }
+
+        super.processWindowEvent(e);
+    }
+
     public JFrameToast() {
         setUndecorated(true);
         setLayout(new GridBagLayout());
         setLocationRelativeTo(null);
-        setSize(150, 50);
-        setFocusable(false);
+        setSize(width, height);
         setAutoRequestFocus(false);
         setIconImage(Client.IMAGE);
 
