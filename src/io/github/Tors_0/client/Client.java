@@ -2,11 +2,9 @@ package io.github.Tors_0.client;
 
 import io.github.Tors_0.server.ChatServer;
 import io.github.Tors_0.util.Fonts;
-import io.github.Tors_0.util.LimitDocumentFilter;
 import io.github.Tors_0.util.SystemInfo;
 
 import javax.swing.*;
-import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
@@ -18,7 +16,7 @@ public class Client {
     static Networking myNetCon = new Networking();
     static JFrame frame;
     private static boolean useFallbackTheme = false;
-    static final Image IMAGE = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/client/resources/lanchat.png"));
+    static final Image IMAGE = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/resources/lanchat.png"));
     static JTextField msgField;
     static JLabel msgLabel;
     static JButton sendButton;
@@ -64,12 +62,16 @@ public class Client {
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+
         } catch (Exception e) {
             new Thread(() -> {
                 JOptionPane.showMessageDialog(frame, "System Theme not supported, using fallback theme");
             }).start();
             useFallbackTheme = true;
         }
+
+        Fonts.initialize();
 
         windowInit();
     }
@@ -84,7 +86,8 @@ public class Client {
 
         // begin messaging panel
         textArea = new JTextArea();
-        textArea.setRows(20);
+        textArea.setRows(15);
+        textArea.setFont(Fonts.m5x7(20f));
         textArea.setLineWrap(true);
         textArea.setEditable(false);
         textArea.setVisible(true);
@@ -123,16 +126,7 @@ public class Client {
 
         connectButton = new JButton(DISCONNECT);
 
-        JToggleButton soundToggle = new JToggleButton("Sound ON");
-        soundToggle.addActionListener(new AbstractAction() {
-            private boolean muted = false;
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                muted = !muted;
-                soundToggle.setText("Sound " + (muted ? "OFF" : "ON"));
-                Networking.PlaySound.setMuted(muted);
-            }
-        });
+
 
         configPane = new JPanel();
         configPane.setLayout(new BoxLayout(configPane,BoxLayout.X_AXIS));
@@ -141,16 +135,26 @@ public class Client {
         configPane.add(hostLabel);
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(connectButton);
-        if (IS_LINUX) {
+        if (IS_LINUX) { // add notification sound mute button for linux computers
+            JToggleButton soundToggle = new JToggleButton("Sound ON");
+            soundToggle.addActionListener(new AbstractAction() {
+                private boolean muted = false;
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    muted = !muted;
+                    soundToggle.setText("Sound " + (muted ? "OFF" : "ON"));
+                    Networking.PlaySound.setMuted(muted);
+                }
+            });
             configPane.add(Box.createRigidArea(new Dimension(5, 0)));
             configPane.add(soundToggle);
         }
 
         clientButton = new JButton("Join");
-        clientButton.setFont(Fonts.H1);
+        clientButton.setFont(Fonts.m3x6(48));
 
         serverButton = new JButton("Host");
-        serverButton.setFont(Fonts.H1);
+        serverButton.setFont(Fonts.m3x6(48));
 
         menuPane = new JPanel();
         menuPane.setLayout(new BoxLayout(menuPane,BoxLayout.X_AXIS));
