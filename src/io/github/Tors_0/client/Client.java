@@ -78,8 +78,10 @@ public class Client {
 
     private static void windowInit() {
         frame = new ChatFrame("ChatClient");
+        frame.setLayout(new BorderLayout());
 
-        frame.setMinimumSize(new Dimension(700,430));
+        frame.setMinimumSize(new Dimension(525,300));
+        frame.setPreferredSize(new Dimension(525,450));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setIconImage(IMAGE);
 
@@ -87,7 +89,7 @@ public class Client {
         textArea = new JTextArea();
         textArea.setFont(Fonts.m5x7(20));
         textArea.setForeground(Color.white);
-        textArea.setRows(20);
+//        textArea.setRows(20);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
         textArea.setVisible(true);
@@ -114,6 +116,7 @@ public class Client {
         msgPane.add(msgField);
         msgPane.add(Box.createRigidArea(new Dimension(5,0)));
         msgPane.add(sendButton);
+        msgPane.setMaximumSize(new Dimension(3000,50));
 
         chatPane = new JPanel();
         chatPane.setLayout(new BoxLayout(chatPane,BoxLayout.Y_AXIS));
@@ -188,10 +191,7 @@ public class Client {
         menuPane.add(centeredPanel);
         menuPane.add(Box.createHorizontalGlue());
 
-
-        Container contentPane = frame.getContentPane();
-        contentPane.add(chatPane, BorderLayout.CENTER);
-
+        // fallback theme properties
         if (useFallbackTheme) {
             textArea.setForeground(Color.white);
             textArea.setBackground(Color.gray);
@@ -204,19 +204,14 @@ public class Client {
             menuPane.setBackground(Color.darkGray);
             centeredPanel.setBackground(Color.darkGray);
             colorComponents(centeredPanel);
-            contentPane.setBackground(Color.darkGray);
             frame.setBackground(Color.darkGray);
         }
 
 
         frame.pack();
-//        frame.setResizable(false);
         frame.setVisible(true);
 
-        chatPane.setVisible(false);
-        configPane.setVisible(false);
-        menuPane.setVisible(true);
-        contentPane.add(menuPane, BorderLayout.CENTER);
+        frame.add(menuPane, BorderLayout.CENTER);
 
         Action msgAction = new AbstractAction() {
             @Override
@@ -249,9 +244,7 @@ public class Client {
                         myNetCon.close();
                         connected = false;
 
-                        chatPane.setVisible(false);
-                        configPane.setVisible(false);
-                        menuPane.setVisible(true);
+                        setMainMenu(true); // disconnect
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(frame,ex.toString(),"Disconnect Error",JOptionPane.ERROR_MESSAGE);
                     }
@@ -260,9 +253,7 @@ public class Client {
                     try {
                         myNetCon.startConnection(hostname, port);
 
-                        menuPane.setVisible(false);
-                        chatPane.setVisible(true);
-                        configPane.setVisible(true);
+                        setMainMenu(false); // connect
 
                         connected = true;
                         connectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
@@ -297,9 +288,7 @@ public class Client {
 
                         JOptionPane.showMessageDialog(frame,"No server on port " + port, "No Host Found", JOptionPane.INFORMATION_MESSAGE);
 
-                        chatPane.setVisible(false);
-                        configPane.setVisible(false);
-                        menuPane.setVisible(true);
+                        setMainMenu(true); // if we fail to find a server
                     }
                 }).start();
             }
@@ -339,9 +328,7 @@ public class Client {
                             }
                         }).start();
 
-                        menuPane.setVisible(false);
-                        chatPane.setVisible(true);
-                        configPane.setVisible(true);
+                        setMainMenu(false); // show chat screen after starting server
                     } else {
                         if (0 == JOptionPane.showConfirmDialog(frame,"Server already exists on this port, would you like to join it?", "Cannot Host", JOptionPane.YES_NO_OPTION)) {
                             setHostname(hosts.get(0));
@@ -353,6 +340,18 @@ public class Client {
             }
         };
         serverButton.addActionListener(hostAction);
+    }
+
+    private static void setMainMenu(boolean mainMenu) {
+        if (mainMenu) {
+            frame.remove(chatPane);
+            frame.add(menuPane, BorderLayout.CENTER);
+        } else {
+            frame.remove(menuPane);
+            frame.add(chatPane,BorderLayout.CENTER);
+        }
+        frame.pack();
+        frame.repaint();
     }
 
     private static String inputPortNumber() {
