@@ -79,15 +79,15 @@ public class Client {
     private static void windowInit() {
         frame = new ChatFrame("ChatClient");
 
-
-        frame.setMinimumSize(new Dimension(600,430));
+        frame.setMinimumSize(new Dimension(700,430));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setIconImage(IMAGE);
 
         // begin messaging panel
         textArea = new JTextArea();
-        textArea.setRows(15);
-        textArea.setFont(Fonts.m5x7(20f));
+        textArea.setFont(Fonts.m5x7(20));
+        textArea.setForeground(Color.white);
+        textArea.setRows(20);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
         textArea.setVisible(true);
@@ -98,11 +98,14 @@ public class Client {
         new SmartScroller(scrollableTextArea);
 
         msgLabel = new JLabel("Send a message: ", SwingConstants.LEFT);
+        msgLabel.setFont(Fonts.m5x7(20));
 
         msgField = new JTextField();
+        msgField.setFont(Fonts.m5x7(20));
         msgField.setVisible(true);
 
         sendButton = new JButton("Send");
+        sendButton.setFont(Fonts.m5x7(20));
 
         msgPane = new JPanel();
         msgPane.setLayout(new BoxLayout(msgPane,BoxLayout.X_AXIS));
@@ -123,10 +126,10 @@ public class Client {
 
         // begin config panel
         hostLabel = new JLabel("Current host: " + hostname);
+        hostLabel.setFont(Fonts.m5x7(20));
 
         connectButton = new JButton(DISCONNECT);
-
-
+        connectButton.setFont(Fonts.m5x7(20));
 
         configPane = new JPanel();
         configPane.setLayout(new BoxLayout(configPane,BoxLayout.X_AXIS));
@@ -136,13 +139,14 @@ public class Client {
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(connectButton);
         if (IS_LINUX) { // add notification sound mute button for linux computers
-            JToggleButton soundToggle = new JToggleButton("Sound ON");
+            JToggleButton soundToggle = new JToggleButton("Sound: ON");
+            soundToggle.setFont(Fonts.m5x7(20));
             soundToggle.addActionListener(new AbstractAction() {
                 private boolean muted = false;
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     muted = !muted;
-                    soundToggle.setText("Sound " + (muted ? "OFF" : "ON"));
+                    soundToggle.setText("Sound: " + (muted ? "OFF" : "ON"));
                     Networking.PlaySound.setMuted(muted);
                 }
             });
@@ -151,17 +155,17 @@ public class Client {
         }
 
         clientButton = new JButton("Join");
-        clientButton.setFont(Fonts.m3x6(48));
+        clientButton.setFont(Fonts.m3x6(40));
 
         serverButton = new JButton("Host");
-        serverButton.setFont(Fonts.m3x6(48));
+        serverButton.setFont(Fonts.m3x6(40));
 
         menuPane = new JPanel();
         menuPane.setLayout(new BoxLayout(menuPane,BoxLayout.X_AXIS));
 
         JPanel inputPane = new JPanel();
         inputPane.setLayout(new BoxLayout(inputPane,BoxLayout.X_AXIS));
-        inputPane.setMaximumSize(new Dimension(300, clientButton.getHeight()));
+        inputPane.setMaximumSize(new Dimension(400, clientButton.getHeight()));
 
         inputPane.add(clientButton);
         inputPane.add(Box.createRigidArea(new Dimension(5,0)));

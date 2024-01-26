@@ -1,5 +1,7 @@
 package io.github.Tors_0.client;
 
+import io.github.Tors_0.util.Fonts;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
@@ -39,10 +41,11 @@ class JFrameToast extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 
         hostnameLabel = new JLabel("from: " + Client.hostname,JLabel.LEFT);
-        hostnameLabel.setFont(Font.getFont(Font.MONOSPACED));
+        hostnameLabel.setFont(Fonts.m3x6(25));
         panel.add(hostnameLabel);
 
         messageLabel = new JLabel("default message :)",JLabel.LEFT);
+        messageLabel.setFont(Fonts.m5x7(20));
         panel.add(messageLabel);
 
         add(panel);
@@ -60,7 +63,7 @@ class JFrameToast extends JFrame {
 
     public void display(String message) {
         try {
-            messageLabel.setText(message);
+            messageLabel.setText(message.length() > 20 ? message.substring(0,20) + "..." : message);
 
             setOpacity(1);
             setVisible(true);
