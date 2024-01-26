@@ -3,6 +3,9 @@
     <output-path>$PROJECT_DIR$/out/artifacts/LAN_Chat_jar</output-path>
     <root id="archive" name="LAN-Chat.jar">
       <element id="module-output" name="LAN-Chat" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/src/io/github/Tors_0/META-INF/MANIFEST.MF" />
+      </element>
     </root>
   </artifact>
 </component>
