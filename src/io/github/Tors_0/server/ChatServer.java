@@ -34,7 +34,7 @@ public class ChatServer implements Closeable {
         discoveryThread.start();
         System.out.println("Listening for clients on port " + port);
         int currentClient = 0;
-        Client.setHostname("localhost");
+        Client.setHostname("127.0.0.1");
         serverStarted = true;
         Client.getConnectAction().actionPerformed(null);
         new Thread(() -> {
@@ -81,11 +81,11 @@ public class ChatServer implements Closeable {
 
     private static class ChatClientHandler extends Thread {
         private final Socket clientSocket;
-        private PrintWriter out;
-        private BufferedReader in;
+        private PrintWriter toClientWriter;
+        private BufferedReader fromClientStream;
         private String clientID;
         private boolean nicknamed = false;
-        private final String IP;
+        private final String CLIENT_IP;
         private static final HashMap<String, String> commandRegistry = new HashMap<>();
         static {
             commandRegistry.put("/help", "Displays all valid commands");
@@ -95,22 +95,22 @@ public class ChatServer implements Closeable {
         public ChatClientHandler(Socket socket, String id, boolean nicknamed) {
             this.clientSocket = socket;
             this.clientID = id;
-            this.IP = clientSocket.getInetAddress().getHostAddress();
+            this.CLIENT_IP = clientSocket.getInetAddress().getHostAddress();
             this.nicknamed = nicknamed;
         }
         public void run() {
             try {
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()), 512);
-                out = new PrintWriter(clientSocket.getOutputStream(), true);
+                fromClientStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()), 512);
+                toClientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            out.println("Use \"/help\" to get a list of valid commands from the server");
+            toClientWriter.println("Use \"/help\" to get a list of valid commands from the server");
             SERVER.distributeMsg((nicknamed ? clientID : "client " + clientID) + " joined\n");
             String msg = "";
             while (msg != null) {
                 try {
-                    msg = in.readLine().trim();
+                    msg = fromClientStream.readLine().trim();
                 } catch (IOException | NullPointerException e) {
                     msg = null;
                 }
@@ -130,29 +130,29 @@ public class ChatServer implements Closeable {
         }
         private void doMessageAction(String text) {
             if (text.startsWith("/help")) {
-                out.println("Valid server commands:");
+                toClientWriter.println("Valid server commands:");
                 commandRegistry.forEach((com,desc) -> {
-                    out.printf("\"%s\" -> %s%n", com, desc);
+                    toClientWriter.printf("\"%s\" -> %s%n", com, desc);
                 });
-                out.println("\n");
+                toClientWriter.println("\n");
             } else if (text.startsWith("/nickname")) {
                 String newName = text.substring(9).trim();
                 if (!newName.isEmpty()) {
-                    if (SERVER.IP_NAME_MAP.containsValue(newName.toLowerCase()) && !newName.equalsIgnoreCase(SERVER.IP_NAME_MAP.get(IP))) {
-                        this.out.printf("Nickname \"%s\" already taken on this server%n", newName);
+                    if (SERVER.IP_NAME_MAP.containsValue(newName.toLowerCase()) && !newName.equalsIgnoreCase(SERVER.IP_NAME_MAP.get(CLIENT_IP))) {
+                        this.toClientWriter.printf("Nickname \"%s\" already taken on this server%n", newName);
                     } else if (newName.length() <= ChatServer.maxNicknameLength) {
                         SERVER.distributeMsg((nicknamed ? clientID : "client " + clientID) + " changed nickname to " + newName);
                         clientID = newName;
                         nicknamed = true;
-                        SERVER.IP_NAME_MAP.put(IP,clientID.toLowerCase());
+                        SERVER.IP_NAME_MAP.put(CLIENT_IP,clientID.toLowerCase());
                     } else {
-                        this.out.println("Nickname must not exceed length " + ChatServer.maxNicknameLength);
+                        this.toClientWriter.println("Nickname must not exceed length " + ChatServer.maxNicknameLength);
                     }
                 } else {
-                    this.out.println("Nickname must not be blank...");
+                    this.toClientWriter.println("Nickname must not be blank...");
                 }
             } else if (text.startsWith("/")) {
-                out.println("Invalid command...");
+                toClientWriter.println("Invalid command...");
             } else {
                 text = String.format("%s: %s%n", (nicknamed ? clientID : "client " + clientID), text);
                 System.out.print(text);
@@ -162,14 +162,14 @@ public class ChatServer implements Closeable {
         public void closeClient() {
             try {
                 clientSocket.close();
-                in.close();
-                out.close();
+                fromClientStream.close();
+                toClientWriter.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
         public void sendMsg(String msg) {
-            out.println(msg);
+            toClientWriter.println(msg);
         }
     }
 }

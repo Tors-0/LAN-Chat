@@ -119,10 +119,6 @@ public class Client {
         chatPane.setLayout(new BoxLayout(chatPane,BoxLayout.Y_AXIS));
         chatPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
-        chatPane.add(scrollableTextArea);
-        chatPane.add(Box.createRigidArea(new Dimension(0,5)));
-        chatPane.add(msgPane);
-
 
         // begin config panel
         hostLabel = new JLabel("Current host: " + hostname);
@@ -153,6 +149,15 @@ public class Client {
             configPane.add(Box.createRigidArea(new Dimension(5, 0)));
             configPane.add(soundToggle);
         }
+
+        chatPane.add(scrollableTextArea);
+        chatPane.add(Box.createRigidArea(new Dimension(0,5)));
+        chatPane.add(msgPane);
+        chatPane.add(Box.createRigidArea(new Dimension(0,5)));
+        chatPane.add(configPane);
+
+
+        // begin main menu
 
         clientButton = new JButton("Join");
         clientButton.setFont(Fonts.m3x6(40));
@@ -185,8 +190,7 @@ public class Client {
 
 
         Container contentPane = frame.getContentPane();
-        contentPane.add(chatPane, BorderLayout.NORTH);
-        contentPane.add(configPane, BorderLayout.SOUTH);
+        contentPane.add(chatPane, BorderLayout.CENTER);
 
         if (useFallbackTheme) {
             textArea.setForeground(Color.white);
@@ -206,7 +210,7 @@ public class Client {
 
 
         frame.pack();
-        frame.setResizable(false);
+//        frame.setResizable(false);
         frame.setVisible(true);
 
         chatPane.setVisible(false);
