@@ -300,7 +300,7 @@ public class Client {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String txt = inputPortNumber();
-                if (txt.isEmpty() || !isValidPort(txt)) return;
+                if (txt == null || txt.isEmpty() || !isValidPort(txt)) return;
                 port = Integer.parseInt(txt);
                 if (port < 1024 || port > 49151) return; // cancel on invalid port numbers
 
@@ -313,7 +313,7 @@ public class Client {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String txt = inputPortNumber();
-                if (txt.isEmpty() || !isValidPort(txt)) return;
+                if (txt == null || txt.isEmpty() || !isValidPort(txt)) return;
                 port = Integer.parseInt(txt);
                 if (port < 1024 || port > 49151) return; // cancel on invalid server port numbers
                 serverButton.setEnabled(false);
