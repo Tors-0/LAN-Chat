@@ -62,29 +62,6 @@ public class Client {
     static ArrayList<String> hosts = new ArrayList<>();
 
     public static void main(String[] args) {
-        if (Version.isVersionPresent()) {
-            String version = Version.getVersion();
-            try {
-                URLConnection connection = new URL("https://github.com/Tors-0/LAN-Chat/releases/latest").openConnection();
-                connection.connect();
-                connection.getInputStream();
-                String repoUrl = connection.getURL().toString();
-                String[] pathSects = repoUrl.split("/");
-                if (version.equals(pathSects[pathSects.length-1])) {
-                    System.out.println("local version identical to github version");
-                } else {
-                    System.out.println("github version different to local version");
-                    if (0 == JOptionPane.showConfirmDialog(null, "Newer release available, download?","Auto Updater", JOptionPane.YES_NO_OPTION)) {
-                        // download the updated jar file
-                        String fileName = "LAN-Chat-" + pathSects[pathSects.length-1] + ".jar";
-
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
