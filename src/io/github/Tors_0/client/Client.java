@@ -234,7 +234,7 @@ public class Client {
         msgField.addActionListener(msgAction);
         sendButton.addActionListener(e -> {
             msgAction.actionPerformed(e);
-            msgField.requestFocus();
+            msgField.requestFocusInWindow();
         });
         connectAction = new AbstractAction() {
             @Override
@@ -249,7 +249,7 @@ public class Client {
                         connected = false;
 
                         setMainMenu(true); // disconnect
-                        disconnectButton.requestFocus();
+                        disconnectButton.requestFocusInWindow();
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(frame,ex.toString(),"Disconnect Error",JOptionPane.ERROR_MESSAGE);
                     }
@@ -263,7 +263,7 @@ public class Client {
                         connected = true;
                         disconnectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
                         textArea.setText("Connected to " + hostname + " on port " + port);
-                        msgField.requestFocus();
+                        msgField.requestFocusInWindow();
                     } catch (IOException ex) {
                         if (e != null) {
                             JOptionPane.showMessageDialog(frame, ex.toString(), "Connect Failed", JOptionPane.ERROR_MESSAGE);
