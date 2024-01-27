@@ -1,4 +1,4 @@
-package io.github.Tors_0.client;
+package io.github.Tors_0.util;
 
 import java.awt.Component;
 import java.awt.event.*;
@@ -95,7 +95,6 @@ public class SmartScroller implements AdjustmentListener
             scrollBar = scrollPane.getVerticalScrollBar();
 
         scrollBar.addAdjustmentListener( this );
-
         //  Turn off automatic scrolling for text components
 
         Component view = scrollPane.getViewport().getView();

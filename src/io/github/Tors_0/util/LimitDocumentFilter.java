@@ -25,9 +25,7 @@ public class LimitDocumentFilter extends DocumentFilter {
         if (overLimit > 0) {
             text = text.substring(0, text.length() - overLimit);
         }
-        if (!text.isEmpty()) {
-            super.replace(fb, offset, length, text, attrs);
-        }
+        super.replace(fb, offset, length, text, attrs);
     }
 
 }

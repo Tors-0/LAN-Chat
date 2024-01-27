@@ -1,10 +1,10 @@
 package io.github.Tors_0.client;
 
 import io.github.Tors_0.server.ChatServer;
-import io.github.Tors_0.util.Fonts;
-import io.github.Tors_0.util.SystemInfo;
+import io.github.Tors_0.util.*;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
@@ -36,12 +36,12 @@ public class Client {
 
     static String hostname = "               ";
     static JLabel hostLabel;
-    static JButton connectButton;
+    static JButton disconnectButton;
     static final String DISCONNECT = "Exit";
     static JTextArea textArea;
     static JScrollPane scrollableTextArea;
-    static JButton clientButton;
-    static JButton serverButton;
+    static JButton joinButton;
+    static JButton hostButton;
     static Action connectAction;
     public static Action getConnectAction() {
         return connectAction;
@@ -87,14 +87,16 @@ public class Client {
         textArea = new JTextArea();
         textArea.setFont(Fonts.m5x7(20));
         textArea.setForeground(Color.white);
-//        textArea.setRows(20);
+        textArea.setRows(1);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
         textArea.setVisible(true);
+        textArea.setBorder(BorderFactory.createLineBorder(Color.red));
 
         scrollableTextArea = useFallbackTheme ? new ModernScrollPane(textArea) : new JScrollPane(textArea);
         scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollableTextArea.setBorder(BorderFactory.createLineBorder(Color.green));
         new SmartScroller(scrollableTextArea);
 
         msgLabel = new JLabel("Send a message: ", SwingConstants.LEFT);
@@ -102,6 +104,7 @@ public class Client {
 
         msgField = new JTextField();
         msgField.setFont(Fonts.m5x7(20));
+        ((AbstractDocument) msgField.getDocument()).setDocumentFilter(new LimitDocumentFilter(128));
         msgField.setVisible(true);
 
         sendButton = new JButton("Send");
@@ -125,8 +128,8 @@ public class Client {
         hostLabel = new JLabel("Current host: " + hostname);
         hostLabel.setFont(Fonts.m5x7(20));
 
-        connectButton = new JButton(DISCONNECT);
-        connectButton.setFont(Fonts.m5x7(20));
+        disconnectButton = new JButton(DISCONNECT);
+        disconnectButton.setFont(Fonts.m5x7(20));
 
         configPane = new JPanel();
         configPane.setLayout(new BoxLayout(configPane,BoxLayout.X_AXIS));
@@ -134,7 +137,7 @@ public class Client {
 
         configPane.add(hostLabel);
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
-        configPane.add(connectButton);
+        configPane.add(disconnectButton);
         if (IS_LINUX) { // add notification sound mute button for linux computers
             JToggleButton soundToggle = new JToggleButton("Sound: ON");
             soundToggle.setFont(Fonts.m5x7(20));
@@ -160,22 +163,22 @@ public class Client {
 
         // begin main menu
 
-        clientButton = new JButton("Join");
-        clientButton.setFont(Fonts.m3x6(40));
+        joinButton = new JButton("Join");
+        joinButton.setFont(Fonts.m3x6(40));
 
-        serverButton = new JButton("Host");
-        serverButton.setFont(Fonts.m3x6(40));
+        hostButton = new JButton("Host");
+        hostButton.setFont(Fonts.m3x6(40));
 
         menuPane = new JPanel();
         menuPane.setLayout(new BoxLayout(menuPane,BoxLayout.X_AXIS));
 
         JPanel inputPane = new JPanel();
         inputPane.setLayout(new BoxLayout(inputPane,BoxLayout.X_AXIS));
-        inputPane.setMaximumSize(new Dimension(400, clientButton.getHeight()));
+        inputPane.setMaximumSize(new Dimension(400, joinButton.getHeight()));
 
-        inputPane.add(clientButton);
+        inputPane.add(joinButton);
         inputPane.add(Box.createRigidArea(new Dimension(5,0)));
-        inputPane.add(serverButton);
+        inputPane.add(hostButton);
 
 
         JPanel centeredPanel = new JPanel();
@@ -246,6 +249,7 @@ public class Client {
                         connected = false;
 
                         setMainMenu(true); // disconnect
+                        disconnectButton.requestFocus();
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(frame,ex.toString(),"Disconnect Error",JOptionPane.ERROR_MESSAGE);
                     }
@@ -257,8 +261,9 @@ public class Client {
                         setMainMenu(false); // connect
 
                         connected = true;
-                        connectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
+                        disconnectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
                         textArea.setText("Connected to " + hostname + " on port " + port);
+                        msgField.requestFocus();
                     } catch (IOException ex) {
                         if (e != null) {
                             JOptionPane.showMessageDialog(frame, ex.toString(), "Connect Failed", JOptionPane.ERROR_MESSAGE);
@@ -267,7 +272,7 @@ public class Client {
                 }
             }
         };
-        connectButton.addActionListener(connectAction);
+        disconnectButton.addActionListener(connectAction);
         Action searchAction = new AbstractAction() {
             long nextAvailableTimeMillis = System.currentTimeMillis();
             @Override
@@ -297,24 +302,21 @@ public class Client {
         Action joinAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String txt = inputPortNumber();
-                if (txt == null || txt.isEmpty() || isInvalidPort(txt)) return;
-                port = Integer.parseInt(txt);
-                if (port < 1024 || port > 49151) return; // cancel on invalid port numbers
+                if (validatePortSelection()) return; // cancel on invalid port numbers
+                joinButton.setEnabled(false);
 
                 searchAction.actionPerformed(e);
-                connectButton.setText(DISCONNECT);
+                disconnectButton.setText(DISCONNECT);
+
+                joinButton.setEnabled(true);
             }
         };
-        clientButton.addActionListener(joinAction);
+        joinButton.addActionListener(joinAction);
         Action hostAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String txt = inputPortNumber();
-                if (txt == null || txt.isEmpty() || isInvalidPort(txt)) return;
-                port = Integer.parseInt(txt);
-                if (port < 1024 || port > 49151) return; // cancel on invalid server port numbers
-                serverButton.setEnabled(false);
+                if (validatePortSelection()) return; // cancel on invalid port numbers
+                hostButton.setEnabled(false);
 
                 new Thread(() -> {
                     hosts = findLocalServerIPs();
@@ -336,11 +338,24 @@ public class Client {
                             connectAction.actionPerformed(e);
                         }
                     }
-                    serverButton.setEnabled(true);
+                    hostButton.setEnabled(true);
                 }).start();
             }
         };
-        serverButton.addActionListener(hostAction);
+        hostButton.addActionListener(hostAction);
+    }
+
+    /**
+     * Prompt the user for a port number
+     * @return true if port is valid (within 1024 and 49151, inclusive), false otherwise
+     */
+    private static boolean validatePortSelection() {
+        String txt = inputPortNumber();
+        if (txt == null || txt.isEmpty() || isInvalidPort(txt)) return true;
+        port = Integer.parseInt(txt);
+        if (port < 1024 || port > 49151) return true;
+
+        return false;
     }
 
     private static void setMainMenu(boolean mainMenu) {
@@ -356,7 +371,7 @@ public class Client {
     }
 
     private static String inputPortNumber() {
-        return JOptionPane.showInputDialog(frame,"Please input a port number from 1024 to 49151","Select Port", JOptionPane.INFORMATION_MESSAGE);
+        return JOptionPane.showInputDialog(frame,"Please input a port number from 1024 to 49151","11209");
     }
 
     public static boolean isInvalidPort(String text) {
@@ -379,6 +394,8 @@ public class Client {
     public static void addText(String txt) {
         if (textArea != null) {
             textArea.append("\n" + txt);
+            textArea.setRows(textArea.getRows() + 1);
+            textArea.repaint();
         }
     }
 
