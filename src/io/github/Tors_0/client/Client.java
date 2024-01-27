@@ -52,6 +52,8 @@ public class Client {
     static JPanel configPane;
     static JPanel menuPane;
 
+    static Container contentPane;
+
     static boolean connected = false;
     static final int discoveryTimeout = 5000;
 
@@ -62,6 +64,8 @@ public class Client {
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+
         } catch (Exception e) {
             new Thread(() -> {
                 JOptionPane.showMessageDialog(frame, "System Theme not supported, using fallback theme");
@@ -76,7 +80,6 @@ public class Client {
 
     private static void windowInit() {
         frame = new ChatFrame("ChatClient");
-        frame.setLayout(new BorderLayout());
 
         frame.setMinimumSize(new Dimension(525,300));
         frame.setPreferredSize(new Dimension(525,450));
@@ -87,16 +90,14 @@ public class Client {
         textArea = new JTextArea();
         textArea.setFont(Fonts.m5x7(20));
         textArea.setForeground(Color.white);
-        textArea.setRows(1);
+        textArea.setRows(15);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
         textArea.setVisible(true);
-        textArea.setBorder(BorderFactory.createLineBorder(Color.red));
 
         scrollableTextArea = useFallbackTheme ? new ModernScrollPane(textArea) : new JScrollPane(textArea);
         scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollableTextArea.setBorder(BorderFactory.createLineBorder(Color.green));
         new SmartScroller(scrollableTextArea);
 
         msgLabel = new JLabel("Send a message: ", SwingConstants.LEFT);
@@ -117,7 +118,7 @@ public class Client {
         msgPane.add(msgField);
         msgPane.add(Box.createRigidArea(new Dimension(5,0)));
         msgPane.add(sendButton);
-        msgPane.setMaximumSize(new Dimension(3000,50));
+        msgPane.setMaximumSize(new Dimension(10_000,50)); // horizontal doesn't matter as long as it is too large to feasibly be reached
 
         chatPane = new JPanel();
         chatPane.setLayout(new BoxLayout(chatPane,BoxLayout.Y_AXIS));
@@ -192,7 +193,9 @@ public class Client {
         menuPane.add(centeredPanel);
         menuPane.add(Box.createHorizontalGlue());
 
-        // fallback theme properties
+
+        contentPane = frame.getContentPane();
+
         if (useFallbackTheme) {
             textArea.setForeground(Color.white);
             textArea.setBackground(Color.gray);
@@ -205,6 +208,7 @@ public class Client {
             menuPane.setBackground(Color.darkGray);
             centeredPanel.setBackground(Color.darkGray);
             colorComponents(centeredPanel);
+            contentPane.setBackground(Color.darkGray);
             frame.setBackground(Color.darkGray);
         }
 
@@ -212,7 +216,7 @@ public class Client {
         frame.pack();
         frame.setVisible(true);
 
-        frame.add(menuPane, BorderLayout.CENTER);
+        contentPane.add(menuPane, BorderLayout.CENTER);
 
         Action msgAction = new AbstractAction() {
             @Override
@@ -360,13 +364,13 @@ public class Client {
 
     private static void setMainMenu(boolean mainMenu) {
         if (mainMenu) {
-            frame.remove(chatPane);
-            frame.add(menuPane, BorderLayout.CENTER);
+            contentPane.remove(chatPane);
+            contentPane.add(menuPane, BorderLayout.CENTER);
         } else {
-            frame.remove(menuPane);
-            frame.add(chatPane,BorderLayout.CENTER);
+            contentPane.remove(menuPane);
+            contentPane.add(chatPane,BorderLayout.CENTER);
         }
-        frame.pack();
+        contentPane.repaint();
         frame.repaint();
     }
 
@@ -394,8 +398,8 @@ public class Client {
     public static void addText(String txt) {
         if (textArea != null) {
             textArea.append("\n" + txt);
-            textArea.setRows(textArea.getRows() + 1);
-            textArea.repaint();
+//            textArea.setRows(textArea.getRows() + 1);
+//            textArea.repaint();
         }
     }
 
