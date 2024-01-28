@@ -4,7 +4,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
- * Code taken from {com.sun.javafx.PlatformUtil.java}
+ * Code taken from: {@link com.sun.javafx.PlatformUtil}
  */
 public class SystemInfo {
     private static final String os = System.getProperty("os.name");

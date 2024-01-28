@@ -390,7 +390,7 @@ public class Client {
         textArea = new JTextArea();
         textArea.setFont(Fonts.m5x7(20));
         textArea.setForeground(Color.white);
-        textArea.setRows(15);
+        textArea.setRows(14);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
         textArea.setVisible(true);
@@ -416,10 +416,13 @@ public class Client {
      */
     private static boolean validatePortSelection() {
         String txt = inputPortNumber();
-        if (txt == null || txt.isEmpty() || isInvalidPort(txt)) return true;
+        if (txt == null || txt.isEmpty() || isInvalidPort(txt)) {
+            return true;
+        }
         port = Integer.parseInt(txt);
-        if (port < 1024 || port > 49151) return true;
-
+        if (port < 1024 || port > 49151) {
+            return true;
+        }
         return false;
     }
 
@@ -459,8 +462,6 @@ public class Client {
     public static void addText(String txt) {
         if (textArea != null) {
             textArea.append("\n" + txt);
-//            textArea.setRows(textArea.getRows() + 1);
-//            textArea.repaint();
         }
     }
 
