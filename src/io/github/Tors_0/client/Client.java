@@ -40,6 +40,7 @@ public class Client {
     static final String DISCONNECT = "Exit";
     static JTextArea textArea;
     static JScrollPane scrollableTextArea;
+    static SmartScroller smartScroller;
     static JButton joinButton;
     static JButton hostButton;
     static Action connectAction;
@@ -86,19 +87,6 @@ public class Client {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setIconImage(IMAGE);
 
-        // begin messaging panel
-        textArea = new JTextArea();
-        textArea.setFont(Fonts.m5x7(20));
-        textArea.setForeground(Color.white);
-        textArea.setRows(15);
-        textArea.setLineWrap(true);
-        textArea.setEditable(false);
-        textArea.setVisible(true);
-
-        scrollableTextArea = useFallbackTheme ? new ModernScrollPane(textArea) : new JScrollPane(textArea);
-        scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        new SmartScroller(scrollableTextArea);
 
         msgLabel = new JLabel("Send a message: ", SwingConstants.LEFT);
         msgLabel.setFont(Fonts.m5x7(20));
@@ -122,8 +110,10 @@ public class Client {
 
         chatPane = new JPanel();
         chatPane.setLayout(new BoxLayout(chatPane,BoxLayout.Y_AXIS));
-        chatPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+//        chatPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        chatPane.setBorder(BorderFactory.createLineBorder(Color.green));
 
+        setupTextArea(false); // get the text area set up for initial maths
 
         // begin config panel
         hostLabel = new JLabel("Current host: " + hostname);
@@ -155,7 +145,7 @@ public class Client {
             configPane.add(soundToggle);
         }
 
-        chatPane.add(scrollableTextArea);
+//        scrollableTextArea added via setup method
         chatPane.add(Box.createRigidArea(new Dimension(0,5)));
         chatPane.add(msgPane);
         chatPane.add(Box.createRigidArea(new Dimension(0,5)));
@@ -217,6 +207,8 @@ public class Client {
         frame.setVisible(true);
 
         contentPane.add(menuPane, BorderLayout.CENTER);
+        menuPane.setVisible(true);
+        contentPane.setVisible(true);
 
         Action msgAction = new AbstractAction() {
             @Override
@@ -267,7 +259,7 @@ public class Client {
                         connected = true;
                         disconnectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
                         textArea.setText("Connected to " + hostname + " on port " + port);
-                        msgField.requestFocusInWindow();
+                        msgField.requestFocusInWindow(); // focus the message box
                     } catch (IOException ex) {
                         if (e != null) {
                             JOptionPane.showMessageDialog(frame, ex.toString(), "Connect Failed", JOptionPane.ERROR_MESSAGE);
@@ -349,6 +341,32 @@ public class Client {
         hostButton.addActionListener(hostAction);
     }
 
+    private static void setupTextArea(boolean notInit) {
+        // begin messaging panel
+        textArea = new JTextArea();
+        textArea.setFont(Fonts.m5x7(20));
+        textArea.setForeground(Color.white);
+        textArea.setRows(15);
+        textArea.setLineWrap(true);
+        textArea.setEditable(false);
+        textArea.setVisible(true);
+
+        scrollableTextArea = useFallbackTheme ? new ModernScrollPane(textArea) : new JScrollPane(textArea);
+        scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollableTextArea.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+
+        smartScroller = new SmartScroller(scrollableTextArea);
+
+        if (notInit) {
+            chatPane.remove(0);
+        }
+        chatPane.add(scrollableTextArea,0);
+        // TODO 2024.01.28: fix this janky mess and figure out a better way to refresh the frame
+        frame.setSize(frame.getWidth()+1,frame.getHeight());
+        frame.setSize(frame.getWidth()-1,frame.getHeight());
+    }
+
     /**
      * Prompt the user for a port number
      * @return true if port is valid (within 1024 and 49151, inclusive), false otherwise
@@ -368,9 +386,9 @@ public class Client {
             contentPane.add(menuPane, BorderLayout.CENTER);
         } else {
             contentPane.remove(menuPane);
+            setupTextArea(true);
             contentPane.add(chatPane,BorderLayout.CENTER);
         }
-        contentPane.repaint();
         frame.repaint();
     }
 
