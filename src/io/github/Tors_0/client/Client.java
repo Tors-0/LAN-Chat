@@ -15,6 +15,8 @@ import java.util.Enumeration;
 public class Client {
     static Networking myNetCon = new Networking();
     static JFrame frame;
+    static JMenuBar menuBar;
+    static JMenu commandMenu;
     private static boolean useFallbackTheme = false;
     static final Image IMAGE = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/resources/lanchat.png"));
     static JTextField msgField;
@@ -34,7 +36,7 @@ public class Client {
         }
     }
 
-    static String hostname = "               ";
+    static String hostname = "";
     static JLabel hostLabel;
     static JButton disconnectButton;
     static final String DISCONNECT = "Exit";
@@ -57,6 +59,9 @@ public class Client {
 
     static boolean connected = false;
     static final int discoveryTimeout = 5000;
+
+    // user nickname (sent to server on first connect)
+    static String nickname;
 
     // UDP socket for server discovery
     static DatagramSocket c;
@@ -87,6 +92,39 @@ public class Client {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setIconImage(IMAGE);
 
+        // menu bar init
+        menuBar = new JMenuBar();
+
+        commandMenu = new JMenu("Commands");
+
+        JMenuItem helpCommand = new JMenuItem("Help");
+        helpCommand.addActionListener(e -> {
+            sendToServer("/help");
+        });
+        commandMenu.add(helpCommand);
+
+        JMenuItem nicknameCommand = new JMenuItem("Set Nickname");
+        nicknameCommand.addActionListener(e -> {
+            String nick = JOptionPane.showInputDialog(frame, "Enter new nickname (3-20 chars): ");
+            if (connected) {
+                sendToServer("/nickname " + nick);
+            } else {
+                nickname = nick;
+            }
+        });
+        commandMenu.add(nicknameCommand);
+
+        JMenuItem quitCommand = new JMenuItem("Quit");
+        quitCommand.addActionListener(e -> {
+            stopClient();
+        });
+        commandMenu.add(quitCommand);
+
+        menuBar.add(commandMenu);
+
+        frame.setJMenuBar(menuBar);
+
+        // end menu bar init
 
         msgLabel = new JLabel("Send a message: ", SwingConstants.LEFT);
         msgLabel.setFont(Fonts.m5x7(20));
@@ -110,8 +148,7 @@ public class Client {
 
         chatPane = new JPanel();
         chatPane.setLayout(new BoxLayout(chatPane,BoxLayout.Y_AXIS));
-//        chatPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-        chatPane.setBorder(BorderFactory.createLineBorder(Color.green));
+        chatPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
         setupTextArea(false); // get the text area set up for initial maths
 
@@ -216,13 +253,7 @@ public class Client {
                 String text = msgField.getText().trim();
                 msgField.setText("");
                 if ("/stop".equals(text) || "/exit".equals(text) || "/quit".equals(text)) {
-                    System.out.println("stopping client...");
-                    try {
-                        close();
-                    } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(frame,ex.toString(),"Stop Error",JOptionPane.ERROR_MESSAGE);
-                    }
-                    System.exit(0);
+                    stopClient();
                 }
                 sendToServer(text);
             }
@@ -259,6 +290,9 @@ public class Client {
                         connected = true;
                         disconnectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
                         textArea.setText("Connected to " + hostname + " on port " + port);
+                        if (nickname != null) {
+                            sendToServer("/nickname " + nickname);
+                        }
                         msgField.requestFocusInWindow(); // focus the message box
                     } catch (IOException ex) {
                         if (e != null) {
@@ -341,6 +375,16 @@ public class Client {
         hostButton.addActionListener(hostAction);
     }
 
+    private static void stopClient() {
+        System.out.println("stopping client...");
+        try {
+            close();
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(frame,ex.toString(),"Stop Error",JOptionPane.ERROR_MESSAGE);
+        }
+        System.exit(0);
+    }
+
     private static void setupTextArea(boolean notInit) {
         // begin messaging panel
         textArea = new JTextArea();
@@ -354,7 +398,6 @@ public class Client {
         scrollableTextArea = useFallbackTheme ? new ModernScrollPane(textArea) : new JScrollPane(textArea);
         scrollableTextArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollableTextArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollableTextArea.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
         smartScroller = new SmartScroller(scrollableTextArea);
 
