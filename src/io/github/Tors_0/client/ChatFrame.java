@@ -15,7 +15,7 @@ public class ChatFrame extends JFrame {
     protected void processWindowEvent(WindowEvent e) {
         if (e.getID() == WindowEvent.WINDOW_CLOSING) {
             try {
-                Client.close();
+                Main.close();
             } catch (IOException ignored) {}
         }
 

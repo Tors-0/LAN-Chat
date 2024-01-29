@@ -13,8 +13,8 @@ public class SysTrayToast {
         trayIcon.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Client.frame.setState(JFrame.NORMAL);
-                Client.frame.toFront();
+                Main.frame.setState(JFrame.NORMAL);
+                Main.frame.toFront();
             }
         });
 

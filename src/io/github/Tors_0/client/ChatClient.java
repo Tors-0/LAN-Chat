@@ -6,13 +6,13 @@ import java.applet.AudioClip;
 import java.io.*;
 import java.net.Socket;
 
-public class Networking implements Closeable {
+public class ChatClient implements Closeable {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
     private Thread worker;
 
-    public Networking() {
+    public ChatClient() {
     }
     public void startConnection(String ip, int port) throws IOException {
         socket = new Socket(ip, port);
@@ -50,10 +50,10 @@ public class Networking implements Closeable {
                     msg = null;
                 }
                 if (msg != null && !msg.isEmpty()) {
-                    Client.addText(msg);
-                    if (!Client.frame.isActive()) {
+                    Main.addText(msg);
+                    if (!Main.frame.isActive()) {
                         // send a toast message
-                        if (Client.IS_LINUX) {
+                        if (Main.IS_LINUX) {
                             // new thread to avoid queueing toasts
                             String finalMsg = msg;
                             new Thread(() -> {
@@ -69,8 +69,8 @@ public class Networking implements Closeable {
                         }
                     }
                     if ("Server closed".equals(msg)) {
-                        Client.showAlertMessage("Server stopped by host","Disconnected", JOptionPane.INFORMATION_MESSAGE);
-                        Client.getConnectAction().actionPerformed(null);
+                        Main.showAlertMessage("Server stopped by host","Disconnected", JOptionPane.INFORMATION_MESSAGE);
+                        Main.getConnectAction().actionPerformed(null);
                         break;
                     }
                 }

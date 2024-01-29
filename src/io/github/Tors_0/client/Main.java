@@ -12,8 +12,8 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
-public class Client {
-    static Networking myNetCon = new Networking();
+public class Main {
+    static ChatClient myNetCon = new ChatClient();
     static JFrame frame;
     static JMenuBar menuBar;
     static JMenu commandMenu;
@@ -30,7 +30,7 @@ public class Client {
         return port;
     }
     public static void setHostname(String hostname) {
-        Client.hostname = hostname.replaceAll(" ","");
+        Main.hostname = hostname.replaceAll(" ","");
         if (hostLabel != null) {
             hostLabel.setText("Current host: " + hostname + ":" + port);
         }
@@ -175,7 +175,7 @@ public class Client {
                 public void actionPerformed(ActionEvent e) {
                     muted = !muted;
                     soundToggle.setText("Sound: " + (muted ? "OFF" : "ON"));
-                    Networking.PlaySound.setMuted(muted);
+                    ChatClient.PlaySound.setMuted(muted);
                 }
             });
             configPane.add(Box.createRigidArea(new Dimension(5, 0)));
@@ -493,7 +493,7 @@ public class Client {
             try {
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName("255.255.255.255"), port);
                 c.send(sendPacket);
-                System.out.println(Client.class.getName() + ">>> Request packet sent to: 255.255.255.255 (DEFAULT)");
+                System.out.println(Main.class.getName() + ">>> Request packet sent to: 255.255.255.255 (DEFAULT)");
             } catch (Exception ignored) {}
 
             // Broadcast the message over all the network interfaces
@@ -517,11 +517,11 @@ public class Client {
                         c.send(sendPacket);
                     } catch (Exception ignored) {}
 
-                    System.out.println(Client.class.getName() + ">>> Request packet sent to: " + broadcast.getHostAddress() + "; Interface: " + networkInterface.getDisplayName());
+                    System.out.println(Main.class.getName() + ">>> Request packet sent to: " + broadcast.getHostAddress() + "; Interface: " + networkInterface.getDisplayName());
                 }
             }
 
-            System.out.println(Client.class.getName() + ">>> Done looping over all network interfaces. Now waiting for a reply!");
+            System.out.println(Main.class.getName() + ">>> Done looping over all network interfaces. Now waiting for a reply!");
 
             //Wait for a response
             byte[] recvBuf = new byte[256];
@@ -532,7 +532,7 @@ public class Client {
             } while (!"DISCOVER_FUIFSERVER_RESPONSE".equals(new String(receivePacket.getData()).trim()));
 
             //We have a response
-            System.out.println(Client.class.getName() + ">>> Broadcast response from server: " + receivePacket.getAddress().getHostAddress());
+            System.out.println(Main.class.getName() + ">>> Broadcast response from server: " + receivePacket.getAddress().getHostAddress());
 
             //Check if the message is correct
             String message = new String(receivePacket.getData()).trim();

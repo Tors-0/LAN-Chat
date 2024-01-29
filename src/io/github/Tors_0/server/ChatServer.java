@@ -1,6 +1,6 @@
 package io.github.Tors_0.server;
 
-import io.github.Tors_0.client.Client;
+import io.github.Tors_0.client.Main;
 
 import javax.swing.*;
 import java.io.*;
@@ -28,18 +28,18 @@ public class ChatServer implements Closeable {
     static final int maxNicknameLength = 20;
     static final int minNicknameLength = 3;
     public void start() throws IOException {
-        ChatServer.port = Client.getPort();
+        ChatServer.port = Main.getPort();
         serverSocket = new ServerSocket(port);
         System.out.println("Server started on port " + port);
         discoveryThread = new DiscoveryThread();
         discoveryThread.start();
         System.out.println("Listening for clients on port " + port);
         int currentClient = 0;
-        Client.setHostname("127.0.0.1");
+        Main.setHostname("127.0.0.1");
         serverStarted = true;
-        Client.getConnectAction().actionPerformed(null);
+        Main.getConnectAction().actionPerformed(null);
         new Thread(() -> {
-            Client.showAlertMessage("Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
+            Main.showAlertMessage("Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
         }).start();
         while (true) { // start the server loop, grab all incoming clients and give them a handler
             Socket clientSocket = serverSocket.accept();
