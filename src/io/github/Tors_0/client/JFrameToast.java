@@ -20,8 +20,8 @@ class JFrameToast extends JFrame {
     @Override
     protected void processWindowEvent(WindowEvent e) {
         if (WindowEvent.WINDOW_ACTIVATED == e.getID()) {
-            Main.frame.setState(JFrame.NORMAL);
-            Main.frame.toFront();
+            Client.frame.setState(JFrame.NORMAL);
+            Client.frame.toFront();
             this.setVisible(false);
         }
 
@@ -34,13 +34,13 @@ class JFrameToast extends JFrame {
         setLocationRelativeTo(null);
         setSize(width, height);
         setAutoRequestFocus(false);
-        setIconImage(Main.IMAGE);
+        setIconImage(Client.IMAGE);
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 
-        hostnameLabel = new JLabel("from: " + Main.hostname,JLabel.LEFT);
+        hostnameLabel = new JLabel("from: " + Client.hostname,JLabel.LEFT);
         hostnameLabel.setFont(Fonts.m3x6(25));
         panel.add(hostnameLabel);
 

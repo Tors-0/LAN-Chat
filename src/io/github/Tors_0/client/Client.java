@@ -2,6 +2,7 @@ package io.github.Tors_0.client;
 
 import io.github.Tors_0.server.ChatServer;
 import io.github.Tors_0.util.*;
+import io.github.Tors_0.util.NetDataUtil.Identifier;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -12,11 +13,13 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
-public class Main {
+public class Client {
     static ChatClient myNetCon = new ChatClient();
     static JFrame frame;
     static JMenuBar menuBar;
     static JMenu commandMenu;
+    static JMenu usersMenu;
+    static JMenu usersSubMenu;
     private static boolean useFallbackTheme = false;
     static final Image IMAGE = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/resources/lanchat.png"));
     static JTextField msgField;
@@ -30,7 +33,7 @@ public class Main {
         return port;
     }
     public static void setHostname(String hostname) {
-        Main.hostname = hostname.replaceAll(" ","");
+        Client.hostname = hostname.replaceAll(" ","");
         if (hostLabel != null) {
             hostLabel.setText("Current host: " + hostname + ":" + port);
         }
@@ -64,7 +67,7 @@ public class Main {
     static String nickname;
 
     // UDP socket for server discovery
-    static DatagramSocket c;
+    static DatagramSocket discoveryPort;
     static ArrayList<String> hosts = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -87,19 +90,20 @@ public class Main {
     private static void windowInit() {
         frame = new ChatFrame("ChatClient");
 
-        frame.setMinimumSize(new Dimension(525,300));
-        frame.setPreferredSize(new Dimension(525,450));
+        frame.setMinimumSize(new Dimension(525,452));
+        frame.setPreferredSize(new Dimension(525,452));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setIconImage(IMAGE);
 
         // menu bar init
         menuBar = new JMenuBar();
 
+        // start command menu
         commandMenu = new JMenu("Commands");
 
         JMenuItem helpCommand = new JMenuItem("Help");
         helpCommand.addActionListener(e -> {
-            sendToServer("/help");
+            sendToServer(Identifier.MESSAGE, "/help");
         });
         commandMenu.add(helpCommand);
 
@@ -107,7 +111,7 @@ public class Main {
         nicknameCommand.addActionListener(e -> {
             String nick = JOptionPane.showInputDialog(frame, "Enter new nickname (3-20 chars): ");
             if (connected) {
-                sendToServer("/nickname " + nick);
+                sendToServer(Identifier.MESSAGE, "/nickname " + nick);
             } else {
                 nickname = nick;
             }
@@ -119,8 +123,28 @@ public class Main {
             stopClient();
         });
         commandMenu.add(quitCommand);
+        // end command menu
+
+        // start online users menu
+        usersMenu = new JMenu("Users");
+        usersSubMenu = new JMenu("List");
+
+        JMenuItem refreshButton = new JMenuItem("Refresh");
+        refreshButton.addActionListener(e -> {
+            if (connected) {
+                sendToServer(Identifier.INFO_REQUEST, NetDataUtil.ONLINE_REQUEST);
+            } else if (nickname != null) {
+                usersSubMenu.removeAll();
+                usersSubMenu.add(nickname);
+            }
+        });
+        usersMenu.add(refreshButton);
+
+        usersMenu.add(usersSubMenu);
+        // end online users menu
 
         menuBar.add(commandMenu);
+        menuBar.add(usersMenu);
 
         frame.setJMenuBar(menuBar);
 
@@ -255,7 +279,7 @@ public class Main {
                 if ("/stop".equals(text) || "/exit".equals(text) || "/quit".equals(text)) {
                     stopClient();
                 }
-                sendToServer(text);
+                sendToServer(Identifier.MESSAGE, text);
             }
         };
         msgField.addActionListener(msgAction);
@@ -291,7 +315,7 @@ public class Main {
                         disconnectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
                         textArea.setText("Connected to " + hostname + " on port " + port);
                         if (nickname != null) {
-                            sendToServer("/nickname " + nickname);
+                            sendToServer(Identifier.MESSAGE, "/nickname " + nickname);
                         }
                         msgField.requestFocusInWindow(); // focus the message box
                     } catch (IOException ex) {
@@ -412,7 +436,7 @@ public class Main {
 
     /**
      * Prompt the user for a port number
-     * @return true if port is valid (within 1024 and 49151, inclusive), false otherwise
+     * @return false if port is valid (within 1024 and 49151, inclusive), true otherwise
      */
     private static boolean validatePortSelection() {
         String txt = inputPortNumber();
@@ -420,10 +444,7 @@ public class Main {
             return true;
         }
         port = Integer.parseInt(txt);
-        if (port < 1024 || port > 49151) {
-            return true;
-        }
-        return false;
+        return port < 1024 || port > 49151;
     }
 
     private static void setMainMenu(boolean mainMenu) {
@@ -465,9 +486,9 @@ public class Main {
         }
     }
 
-    public static void sendToServer(String msg) {
+    public static void sendToServer(Identifier type, String msg) {
         try {
-            myNetCon.sendMsg(msg);
+            myNetCon.sendPacket(type, msg);
         } catch (Exception e) {
             System.out.println("sTS(String) got exception: " + e.getMessage());
         }
@@ -484,16 +505,16 @@ public class Main {
         // Find the server using UDP broadcast
         try {
             //Open a specific port to send the package
-            c = new DatagramSocket(port);
-            c.setBroadcast(true);
+            discoveryPort = new DatagramSocket(port);
+            discoveryPort.setBroadcast(true);
 
             byte[] sendData = "DISCOVER_FUIFSERVER_REQUEST".getBytes();
 
             //Try the 255.255.255.255 first
             try {
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName("255.255.255.255"), port);
-                c.send(sendPacket);
-                System.out.println(Main.class.getName() + ">>> Request packet sent to: 255.255.255.255 (DEFAULT)");
+                discoveryPort.send(sendPacket);
+                System.out.println(Client.class.getName() + ">>> Request packet sent to: 255.255.255.255 (DEFAULT)");
             } catch (Exception ignored) {}
 
             // Broadcast the message over all the network interfaces
@@ -514,25 +535,25 @@ public class Main {
                     // Send the broadcast package!
                     try {
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcast, port);
-                        c.send(sendPacket);
+                        discoveryPort.send(sendPacket);
                     } catch (Exception ignored) {}
 
-                    System.out.println(Main.class.getName() + ">>> Request packet sent to: " + broadcast.getHostAddress() + "; Interface: " + networkInterface.getDisplayName());
+                    System.out.println(Client.class.getName() + ">>> Request packet sent to: " + broadcast.getHostAddress() + "; Interface: " + networkInterface.getDisplayName());
                 }
             }
 
-            System.out.println(Main.class.getName() + ">>> Done looping over all network interfaces. Now waiting for a reply!");
+            System.out.println(Client.class.getName() + ">>> Done looping over all network interfaces. Now waiting for a reply!");
 
             //Wait for a response
             byte[] recvBuf = new byte[256];
             DatagramPacket receivePacket = new DatagramPacket(recvBuf, recvBuf.length);
-            c.setSoTimeout(2500);
+            discoveryPort.setSoTimeout(2500);
             do {
-                c.receive(receivePacket);
+                discoveryPort.receive(receivePacket);
             } while (!"DISCOVER_FUIFSERVER_RESPONSE".equals(new String(receivePacket.getData()).trim()));
 
             //We have a response
-            System.out.println(Main.class.getName() + ">>> Broadcast response from server: " + receivePacket.getAddress().getHostAddress());
+            System.out.println(Client.class.getName() + ">>> Broadcast response from server: " + receivePacket.getAddress().getHostAddress());
 
             //Check if the message is correct
             String message = new String(receivePacket.getData()).trim();
@@ -542,14 +563,14 @@ public class Main {
             }
 
             //Close the port!
-            c.close();
+            discoveryPort.close();
         } catch (IOException ex) {
             if (ex.getClass().equals(BindException.class)) {
                 showAlertMessage("Port already in use by another application", "Port Busy", JOptionPane.INFORMATION_MESSAGE);
             }
             System.out.println(ex.toString());
-            if (c != null) {
-                c.close();
+            if (discoveryPort != null) {
+                discoveryPort.close();
             }
         }
         return serverIPs;

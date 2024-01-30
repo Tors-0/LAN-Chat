@@ -1,14 +1,17 @@
 package io.github.Tors_0.client;
 
+import io.github.Tors_0.util.NetDataUtil;
+
 import javax.swing.*;
 import java.applet.Applet;
 import java.applet.AudioClip;
 import java.io.*;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class ChatClient implements Closeable {
     private Socket socket;
-    private PrintWriter out;
+    private PrintWriter toServerWriter;
     private BufferedReader in;
     private Thread worker;
 
@@ -16,13 +19,20 @@ public class ChatClient implements Closeable {
     }
     public void startConnection(String ip, int port) throws IOException {
         socket = new Socket(ip, port);
-        out = new PrintWriter(socket.getOutputStream(), true);
+        toServerWriter = new PrintWriter(socket.getOutputStream(), true);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         worker = new PrintInputStream(in);
         worker.start();
     }
-    public void sendMsg(String msg) {
-        out.println(msg);
+    public void sendPacket(NetDataUtil.Identifier type, String msg) {
+        switch (type) {
+            case MESSAGE:
+                NetDataUtil.sendMessage(toServerWriter, msg);
+                break;
+            case INFO_REQUEST:
+                NetDataUtil.sendInfoRequest(toServerWriter, msg);
+                break;
+        }
     }
     @Override
     public void close() throws IOException {
@@ -31,7 +41,7 @@ public class ChatClient implements Closeable {
             worker = null;
         }
         socket.close();
-        out.close();
+        toServerWriter.close();
         in.close();
     }
     private static class PrintInputStream extends Thread {
@@ -50,27 +60,40 @@ public class ChatClient implements Closeable {
                     msg = null;
                 }
                 if (msg != null && !msg.isEmpty()) {
-                    Main.addText(msg);
-                    if (!Main.frame.isActive()) {
-                        // send a toast message
-                        if (Main.IS_LINUX) {
-                            // new thread to avoid queueing toasts
-                            String finalMsg = msg;
-                            new Thread(() -> {
-                                toast.display(finalMsg);
-                            }).start();
+                    if (msg.startsWith(NetDataUtil.Identifier.MESSAGE.getKeyString())) {
+                        msg = msg.substring(10);
+                        Client.addText(msg);
+                        if (!Client.frame.isActive()) {
+                            // send a toast message
+                            if (Client.IS_LINUX) {
+                                // new thread to avoid queueing toasts
+                                String finalMsg = msg;
+                                new Thread(() -> {
+                                    toast.display(finalMsg);
+                                }).start();
 
-                            // make a little noise :3
-                            PlaySound.playNotifySound();
-                        } else {
-                            // for Windows and Mac, we use the native notifications :o
-                            SysTrayToast.display(msg);
-                            // don't make a little noise because Windows has one already :(
+                                // make a little noise :3
+                                PlaySound.playNotifySound();
+                            } else {
+                                // for Windows and Mac, we use the native notifications :o
+                                SysTrayToast.display(msg);
+                                // don't make a little noise because Windows has one already :(
+                            }
+                        }
+                    } else if (msg.startsWith(NetDataUtil.Identifier.INFO_RESPONSE.getKeyString())) {
+                        String data = msg.substring(10);
+                        if (data.startsWith(NetDataUtil.ONLINE_RESPONSE)) {
+                            data = data.substring(NetDataUtil.ONLINE_RESPONSE.length());
+                            Client.usersSubMenu.removeAll();
+                            Arrays.stream(data.split(","))
+                                    .forEach(user -> {
+                                        Client.usersSubMenu.add(user);
+                                    });
                         }
                     }
                     if ("Server closed".equals(msg)) {
-                        Main.showAlertMessage("Server stopped by host","Disconnected", JOptionPane.INFORMATION_MESSAGE);
-                        Main.getConnectAction().actionPerformed(null);
+                        Client.showAlertMessage("Server stopped by host","Disconnected", JOptionPane.INFORMATION_MESSAGE);
+                        Client.getConnectAction().actionPerformed(null);
                         break;
                     }
                 }
