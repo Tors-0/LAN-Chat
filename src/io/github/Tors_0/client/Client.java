@@ -77,8 +77,6 @@ public class Client {
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
-
         } catch (Exception e) {
             new Thread(() -> JOptionPane.showMessageDialog(frame, "System Theme not supported, using fallback theme")).start();
             useFallbackTheme = true;
