@@ -111,7 +111,7 @@ public class ChatServer implements Closeable {
             }
             toClientWriter.println("Use \"/help\" to get a list of valid commands from the server");
             String msg = "";
-            while (msg != null) {
+            while (msg != null) { // condition (msg != null) is not always true
                 try {
                     msg = fromClientStream.readLine().trim();
                 } catch (IOException | NullPointerException e) {

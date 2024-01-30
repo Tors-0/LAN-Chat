@@ -140,26 +140,22 @@ public class Client {
         // end online users menu
         // start credits menu
         creditsMenu = new JMenu("Credits");
-        // following section written by <a href="https://stackoverflow.com/users/145574/pstanton">pstanton</a>
         // html content
+        /* following section written by <a href="https://stackoverflow.com/users/145574/pstanton">pstanton</a> */
         JEditorPane creditsPane = new JEditorPane("text/html", "<html>Code written by Rae Johnston, sourced in part from Michiel De May,<br>" +
                 "<a href=\"https://stackoverflow.com/users/992484/madprogrammer\">MadProgrammer</a>, <a href=\"https://stackoverflow.com/users/145574/pstanton\">pstanton</a>, " +
-                "Philip Danner, Rob Camick, and JavaFX PlatformUtil. <br> Fonts (m3x6 and m5x7) made by <a href=\"https://daniellinssen.games\">Daniel Linssen</a>.<br>" +
+                "Philip Danner, Rob Camick, <br>JavaFX PlatformUtil, and <a href=\"https://www.baeldung.com/netty\">baeldung.com</a> for Netty code. <br>" +
+                "Fonts (m3x6 and m5x7) made by <a href=\"https://daniellinssen.games\">Daniel Linssen</a>.<br>" +
                 "Sound effects from <a href=\"https://soundcloud.com/sescini/melodic-1\">Melodic 1 - SoundCloud</a>.</html>");
         creditsPane.setFont(Fonts.m5x7(20));
 
         // handle link events
-        creditsPane.addHyperlinkListener(new HyperlinkListener()
-        {
-            @Override
-            public void hyperlinkUpdate(HyperlinkEvent e)
-            {
-                if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED)) {
-                    try {
-                        Desktop.getDesktop().browse(e.getURL().toURI()); // roll your own link launcher or use Desktop if J6+
-                    } catch (IOException | URISyntaxException ex) {
-                        throw new RuntimeException(ex);
-                    }
+        creditsPane.addHyperlinkListener(e -> {
+            if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED)) {
+                try {
+                    Desktop.getDesktop().browse(e.getURL().toURI()); // roll your own link launcher or use Desktop if J6+
+                } catch (IOException | URISyntaxException ex) {
+                    throw new RuntimeException(ex);
                 }
             }
         });
