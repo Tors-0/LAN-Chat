@@ -5,12 +5,15 @@ import io.github.Tors_0.util.*;
 import io.github.Tors_0.util.NetDataUtil.Identifier;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 
 public class Client {
@@ -20,6 +23,7 @@ public class Client {
     static JMenu commandMenu;
     static JMenu usersMenu;
     static JMenu usersSubMenu;
+    static JMenu creditsMenu;
     private static boolean useFallbackTheme = false;
     static final Image IMAGE = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/resources/lanchat.png"));
     static JTextField msgField;
@@ -76,9 +80,7 @@ public class Client {
 
 
         } catch (Exception e) {
-            new Thread(() -> {
-                JOptionPane.showMessageDialog(frame, "System Theme not supported, using fallback theme");
-            }).start();
+            new Thread(() -> JOptionPane.showMessageDialog(frame, "System Theme not supported, using fallback theme")).start();
             useFallbackTheme = true;
         }
 
@@ -102,9 +104,7 @@ public class Client {
         commandMenu = new JMenu("Commands");
 
         JMenuItem helpCommand = new JMenuItem("Help");
-        helpCommand.addActionListener(e -> {
-            sendToServer(Identifier.MESSAGE, "/help");
-        });
+        helpCommand.addActionListener(e -> sendToServer(Identifier.MESSAGE, "/help"));
         commandMenu.add(helpCommand);
 
         JMenuItem nicknameCommand = new JMenuItem("Set Nickname");
@@ -119,9 +119,7 @@ public class Client {
         commandMenu.add(nicknameCommand);
 
         JMenuItem quitCommand = new JMenuItem("Quit");
-        quitCommand.addActionListener(e -> {
-            stopClient();
-        });
+        quitCommand.addActionListener(e -> stopClient());
         commandMenu.add(quitCommand);
         // end command menu
 
@@ -142,9 +140,46 @@ public class Client {
 
         usersMenu.add(usersSubMenu);
         // end online users menu
+        // start credits menu
+        creditsMenu = new JMenu("Credits");
+        // following section written by <a href="https://stackoverflow.com/users/145574/pstanton">pstanton</a>
+        // html content
+        JEditorPane creditsPane = new JEditorPane("text/html", "<html>Code written by Rae Johnston, sourced in part from Michiel De May,<br>" +
+                "<a href=\"https://stackoverflow.com/users/992484/madprogrammer\">MadProgrammer</a>, <a href=\"https://stackoverflow.com/users/145574/pstanton\">pstanton</a>, " +
+                "Philip Danner, Rob Camick, and JavaFX PlatformUtil. <br> Fonts (m3x6 and m5x7) made by <a href=\"https://daniellinssen.games\">Daniel Linssen</a>.<br>" +
+                "Sound effects from <a href=\"https://soundcloud.com/sescini/melodic-1\">Melodic 1 - SoundCloud</a>.</html>");
+        creditsPane.setFont(Fonts.m5x7(20));
+
+        // handle link events
+        creditsPane.addHyperlinkListener(new HyperlinkListener()
+        {
+            @Override
+            public void hyperlinkUpdate(HyperlinkEvent e)
+            {
+                if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED)) {
+                    try {
+                        Desktop.getDesktop().browse(e.getURL().toURI()); // roll your own link launcher or use Desktop if J6+
+                    } catch (IOException | URISyntaxException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            }
+        });
+        creditsPane.setEditable(false);
+        // end of section contributed by pstanton
+
+        JMenuItem credits = new JMenuItem("Show Credits");
+        credits.addActionListener(e ->
+                JOptionPane.showMessageDialog(frame, creditsPane, "Credits", JOptionPane.INFORMATION_MESSAGE)
+        );
+        creditsMenu.add(credits);
+
+        // end credits menu
 
         menuBar.add(commandMenu);
         menuBar.add(usersMenu);
+        menuBar.add(creditsMenu);
+        Arrays.stream(menuBar.getComponents()).forEach(menu -> menu.setFont(Fonts.m3x6(24)));
 
         frame.setJMenuBar(menuBar);
 
@@ -568,7 +603,7 @@ public class Client {
             if (ex.getClass().equals(BindException.class)) {
                 showAlertMessage("Port already in use by another application", "Port Busy", JOptionPane.INFORMATION_MESSAGE);
             }
-            System.out.println(ex.toString());
+            System.out.println("error in discovery process " + ex);
             if (discoveryPort != null) {
                 discoveryPort.close();
             }

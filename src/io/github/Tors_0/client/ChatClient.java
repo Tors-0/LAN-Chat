@@ -68,9 +68,7 @@ public class ChatClient implements Closeable {
                             if (Client.IS_LINUX) {
                                 // new thread to avoid queueing toasts
                                 String finalMsg = msg;
-                                new Thread(() -> {
-                                    toast.display(finalMsg);
-                                }).start();
+                                new Thread(() -> toast.display(finalMsg)).start();
 
                                 // make a little noise :3
                                 PlaySound.playNotifySound();
@@ -86,9 +84,7 @@ public class ChatClient implements Closeable {
                             data = data.substring(NetDataUtil.ONLINE_RESPONSE.length());
                             Client.usersSubMenu.removeAll();
                             Arrays.stream(data.split(","))
-                                    .forEach(user -> {
-                                        Client.usersSubMenu.add(user);
-                                    });
+                                    .forEach(user -> Client.usersSubMenu.add(user));
                         }
                     }
                     if ("Server closed".equals(msg)) {
