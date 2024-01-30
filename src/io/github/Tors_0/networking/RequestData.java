@@ -18,5 +18,8 @@ public class RequestData {
     public void setStringValue(String stringValue) {
         this.stringValue = stringValue;
     }
-
+    @Override
+    public String toString() {
+        return "RequestData{intValue=" + intValue + ", stringValue='" + stringValue + "'}";
+    }
 }
