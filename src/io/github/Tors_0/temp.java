@@ -13,6 +13,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.Random;
 
 public class temp {
@@ -28,14 +29,15 @@ public class temp {
             throws NoSuchAlgorithmException, IllegalBlockSizeException,
             BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
 
-        String password = "testy";
-        String input = new Random().ints(97, 122 + 1)
+        String password = "password123";
+        String input = new Random().ints(32, 126 + 1)
                 .limit(64)
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                 .toString();
         System.out.println("input:\n" + input);
         SecretKey key = AESUtil.getKeyFromPassword(password, AESUtil.STANDARD_SALT);
         IvParameterSpec ivParameterSpec = AESUtil.generateIv();
+        System.out.println("iv:\n" + Arrays.toString(ivParameterSpec.getIV()));
         String cipherText = AESUtil.encrypt(input, key, ivParameterSpec);
         System.out.println("encrypted:\n" + cipherText);
 //        key = AESUtil.getStandardKeyFromPassword(password);

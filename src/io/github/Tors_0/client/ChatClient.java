@@ -1,12 +1,22 @@
 package io.github.Tors_0.client;
 
+import io.github.Tors_0.crypto.AESUtil;
+import io.github.Tors_0.crypto.CryptoInactiveException;
 import io.github.Tors_0.util.NetDataUtil;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.swing.*;
 import java.applet.Applet;
 import java.applet.AudioClip;
 import java.io.*;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 public class ChatClient implements Closeable {
@@ -24,13 +34,13 @@ public class ChatClient implements Closeable {
         worker = new PrintInputStream(in);
         worker.start();
     }
-    public void sendPacket(NetDataUtil.Identifier type, String msg) {
+    public void sendPacket(NetDataUtil.Identifier type, String msg, SecretKey key, IvParameterSpec iv) {
         switch (type) {
             case MESSAGE:
-                NetDataUtil.sendMessage(toServerWriter, msg);
+                NetDataUtil.sendMessage(toServerWriter, msg, key, iv, Client.cryptoActive);
                 break;
             case INFO_REQUEST:
-                NetDataUtil.sendInfoRequest(toServerWriter, msg);
+                NetDataUtil.sendInfoRequest(toServerWriter, msg, key, iv, Client.cryptoActive);
                 break;
         }
     }
@@ -56,8 +66,14 @@ public class ChatClient implements Closeable {
                 if (interrupted()) break;
                 try {
                     msg = in.readLine();
-                } catch (IOException ignored) {
+                    if (Client.cryptoActive) {
+                        msg = AESUtil.decryptIncoming(msg, Client.cryptoKey).trim();
+                    } else {
+                        throw new RuntimeException(new CryptoInactiveException());
+                    }
+                } catch (Exception e) {
                     msg = null;
+                    throw new RuntimeException(e);
                 }
                 if (msg != null && !msg.isEmpty()) {
 

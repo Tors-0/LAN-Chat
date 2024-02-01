@@ -1,9 +1,12 @@
 package io.github.Tors_0.client;
 
+import io.github.Tors_0.crypto.AESUtil;
 import io.github.Tors_0.server.ChatServer;
 import io.github.Tors_0.util.*;
 import io.github.Tors_0.util.NetDataUtil.Identifier;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
@@ -12,12 +15,20 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 
 public class Client {
-    static ChatClient myNetCon = new ChatClient();
+    static ChatClient myChatClient = new ChatClient();
+    // crypto vars
+    static IvParameterSpec cryptoIv;
+    static String cryptoPassword;
+    static SecretKey cryptoKey;
+    static boolean cryptoActive = false;
+    // end crypto vars
     static JFrame frame;
     static JMenuBar menuBar;
     static JMenu commandMenu;
@@ -331,7 +342,8 @@ public class Client {
                             ChatServer.SERVER.stop();
                         }
 
-                        myNetCon.close();
+                        myChatClient.close();
+                        clearCrypto(cryptoPassword, cryptoKey, cryptoIv);
                         connected = false;
 
                         setMainMenu(true); // disconnect
@@ -342,13 +354,18 @@ public class Client {
                 } else {
                     if (hostname == null || hostname.replaceAll(" ","").isEmpty() || port < 1) return;
                     try {
-                        myNetCon.startConnection(hostname, port);
+                        myChatClient.startConnection(hostname, port);
 
                         setMainMenu(false); // connect
 
                         connected = true;
+                        if (!cryptoActive) {
+                            initializeCrypto();
+                        }
+
                         disconnectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
                         textArea.setText("Connected to " + hostname + " on port " + port);
+                        addText("Use \"/help\" to get a list of valid commands from the server");
                         if (nickname != null) {
                             sendToServer(Identifier.MESSAGE, "/nickname " + nickname);
                         }
@@ -412,7 +429,8 @@ public class Client {
                     if (hosts.isEmpty()) {
                         new Thread(() -> {
                             try {
-                                ChatServer.SERVER.start();
+                                initializeCrypto();
+                                ChatServer.SERVER.start(port, cryptoPassword, cryptoKey);
                             } catch (IOException ex) {
                                 if (!ex.getClass().equals(SocketException.class)) {
                                     JOptionPane.showMessageDialog(frame, ex.toString(), "Server Error", JOptionPane.ERROR_MESSAGE);
@@ -424,6 +442,7 @@ public class Client {
                     } else {
                         if (0 == JOptionPane.showConfirmDialog(frame,"Server already exists on this port, would you like to join it?", "Cannot Host", JOptionPane.YES_NO_OPTION)) {
                             setHostname(hosts.get(0));
+                            initializeCrypto();
                             connectAction.actionPerformed(e);
                         }
                     }
@@ -444,6 +463,26 @@ public class Client {
         System.exit(0);
     }
 
+    /**
+     * get password by user input
+     */
+    private static void initializeCrypto() {
+        try {
+            String userPass = JOptionPane.showInputDialog(frame, "Please input a password for this chat room:");
+            cryptoPassword = userPass;
+            cryptoKey = AESUtil.getStandardKeyFromPassword(userPass);
+            cryptoIv = AESUtil.generateIv();
+            cryptoActive = true;
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private static void clearCrypto(String password, SecretKey key, IvParameterSpec iv) {
+        cryptoActive = false;
+        password = null;
+        key = null;
+        iv = null;
+    }
     private static void setupTextArea(boolean notInit) {
         // begin messaging panel
         textArea = new JTextArea();
@@ -523,9 +562,9 @@ public class Client {
 
     public static void sendToServer(Identifier type, String msg) {
         try {
-            myNetCon.sendPacket(type, msg);
+            myChatClient.sendPacket(type, msg, cryptoKey, cryptoIv);
         } catch (Exception e) {
-            System.out.println("sTS(String) got exception: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
@@ -616,7 +655,7 @@ public class Client {
             ChatServer.SERVER.stop();
         }
         if (connected) {
-            myNetCon.close();
+            myChatClient.close();
         }
     }
 }

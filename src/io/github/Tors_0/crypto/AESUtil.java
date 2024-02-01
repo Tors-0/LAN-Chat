@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import java.util.Base64;
+import java.util.*;
 
 public class AESUtil {
     public static final String STANDARD_SALT = String.valueOf(AESUtil.class);
@@ -58,6 +58,48 @@ public class AESUtil {
         cipher.init(Cipher.DECRYPT_MODE, key, iv);
         byte[] plainText = cipher.doFinal(Base64.getDecoder()
                 .decode(cipherText));
+        return new String(plainText);
+    }
+
+    /**
+     * prepends the iv as the first 16 bytes of the data
+     * @param input string to be encrypted
+     * @param key secret key for encryption
+     * @param iv 16 byte seed
+     * @return encrypted message as string
+     * @throws InvalidKeyException if key is invalid
+     */
+    public static String encryptOutgoing(String input, SecretKey key, IvParameterSpec iv)
+            throws IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException,
+            NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
+
+        Cipher cipher = Cipher.getInstance(ALG);
+        cipher.init(Cipher.ENCRYPT_MODE, key, iv);
+        byte[] cipherText = cipher.doFinal(input.getBytes());
+        byte[] output = new byte[iv.getIV().length + cipherText.length];
+        short pos = 0;
+        for (byte b : iv.getIV()) {
+            output[pos] = b;
+            pos++;
+        }
+        for (byte b : cipherText) {
+            output[pos] = b;
+            pos++;
+        }
+        return Base64.getEncoder().encodeToString(output);
+    }
+    public static String decryptIncoming(String data, SecretKey key)
+            throws IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException,
+            NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
+        // get the data out of base 64
+        byte[] dataArr = Base64.getDecoder().decode(data);
+        // assume first 16 bytes of incoming data are the iv
+        IvParameterSpec iv = new IvParameterSpec(dataArr, 0, 16);
+        byte[] cipherText = Arrays.copyOfRange(dataArr, 16, dataArr.length);
+
+        Cipher cipher = Cipher.getInstance(ALG);
+        cipher.init(Cipher.DECRYPT_MODE, key, iv);
+        byte[] plainText = cipher.doFinal(cipherText);
         return new String(plainText);
     }
 }
