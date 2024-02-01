@@ -69,6 +69,7 @@ public class ChatClient implements Closeable {
                     if (Client.cryptoActive) {
                         if (Client.expectingServerPasswordResponse) {
                             msg = AESUtil.decryptIncoming(msg, AESUtil.STANDARD_KEY).trim();
+                            Client.expectingServerPasswordResponse = false;
                         } else {
                            msg = AESUtil.decryptIncoming(msg, Client.cryptoKey).trim();
                         }
@@ -105,7 +106,6 @@ public class ChatClient implements Closeable {
                             Arrays.stream(data.split(","))
                                     .forEach(user -> Client.usersSubMenu.add(user));
                         } else if (data.startsWith(NetDataUtil.PASSWORD_WRONG)) {
-                            Client.expectingServerPasswordResponse = false;
                             Client.showAlertMessage("Wrong Password","Connect Failed", JOptionPane.INFORMATION_MESSAGE);
                             Client.getConnectAction().actionPerformed(null);
                             break;

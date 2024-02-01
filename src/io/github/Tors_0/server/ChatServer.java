@@ -138,10 +138,11 @@ public class ChatServer implements Closeable {
                 throw new RuntimeException(e);
             }
             String msg = "";
-            if (AESUtil.STANDARD_PASSWORD.equals(ChatServer.cryptoPassword)) {
+            if (!AESUtil.STANDARD_PASSWORD.equals(ChatServer.cryptoPassword) && SERVER.CLIENT_HANDLERS.indexOf(this) != 0) {
                 try {
                     String pass = fromClientStream.readLine();
-                    pass = AESUtil.decryptIncoming(pass, AESUtil.STANDARD_KEY);
+                    pass = AESUtil.decryptIncoming(pass, AESUtil.STANDARD_KEY)
+                            .substring(NetDataUtil.Identifier.MESSAGE.getKeyString().length());
                     if (!cryptoPassword.equals(pass)) {
                         NetDataUtil.sendInfoResponse(toClientWriter, NetDataUtil.PASSWORD_WRONG, AESUtil.getStandardKey(), cryptoIv, cryptoActive);
                         msg = null;
@@ -149,7 +150,6 @@ public class ChatServer implements Closeable {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-
             }
             while (msg != null) {
                 try {

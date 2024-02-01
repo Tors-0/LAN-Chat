@@ -364,7 +364,7 @@ public class Client {
 
                         connected = true;
                         if (!cryptoActive) {
-                            initializeCrypto();
+                            initializeCrypto(); // join remote host
                         }
 
                         disconnectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
@@ -435,7 +435,7 @@ public class Client {
                         new Thread(() -> {
                             try {
                                 isHost = true;
-                                initializeCrypto();
+                                initializeCrypto(); // start local host
                                 ChatServer.SERVER.start(port, cryptoPassword, cryptoKey);
                             } catch (IOException ex) {
                                 if (!ex.getClass().equals(SocketException.class)) {
@@ -449,7 +449,7 @@ public class Client {
                         if (0 == JOptionPane.showConfirmDialog(frame,"Server already exists on this port, would you like to join it?", "Cannot Host", JOptionPane.YES_NO_OPTION)) {
                             setHostname(hosts.get(0));
                             isHost = false;
-                            initializeCrypto();
+                            initializeCrypto(); // found conflicting host
                             connectAction.actionPerformed(e);
                         }
                     }
@@ -481,9 +481,6 @@ public class Client {
                 if (userPass == null || userPass.isEmpty()) {
                     userPass = AESUtil.STANDARD_PASSWORD;
                 }
-                if (!isHost) {
-                    expectServerResponse(userPass);
-                }
             } else {
                 userPass = AESUtil.STANDARD_PASSWORD;
             }
@@ -491,6 +488,9 @@ public class Client {
             cryptoKey = AESUtil.getStandardKeyFromPassword(userPass);
             cryptoIv = AESUtil.generateIv();
             cryptoActive = true;
+            if (serverNeedsPass && !isHost) {
+                expectServerResponse(userPass);
+            }
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
