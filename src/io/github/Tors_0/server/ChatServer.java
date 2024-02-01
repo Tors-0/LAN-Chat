@@ -80,15 +80,15 @@ public class ChatServer implements Closeable {
         this.CLIENT_HANDLERS.remove(handler);
     }
     public void distributeMsg(String msg) {
-        if (cryptoActive) {
-            try {
-                msg = AESUtil.encryptOutgoing(msg, cryptoKey, cryptoIv);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            throw new RuntimeException(new CryptoInactiveException());
-        }
+//        if (cryptoActive) {
+//            try {
+//                msg = AESUtil.encryptOutgoing(msg, cryptoKey, cryptoIv);
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        } else {
+//            throw new RuntimeException(new CryptoInactiveException());
+//        }
         synchronized (CLIENT_HANDLERS_LOCK) {
             for (ChatClientHandler clientHandler : CLIENT_HANDLERS) {
                 clientHandler.sendMsg(msg);
