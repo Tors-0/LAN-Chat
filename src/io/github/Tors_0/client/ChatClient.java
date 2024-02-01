@@ -60,6 +60,7 @@ public class ChatClient implements Closeable {
                     msg = null;
                 }
                 if (msg != null && !msg.isEmpty()) {
+
                     if (msg.startsWith(NetDataUtil.Identifier.MESSAGE.getKeyString())) {
                         msg = msg.substring(10);
                         Client.addText(msg);

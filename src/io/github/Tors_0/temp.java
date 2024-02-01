@@ -1,66 +1,46 @@
 package io.github.Tors_0;
 
+import io.github.Tors_0.crypto.AESUtil;
+
 import javax.crypto.*;
-import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.SecureRandom;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Random;
 
 public class temp {
     public static void main(String[] args) {
-        send();
-        receive();
-    }
-
-    private static void send() {
         try {
-            KeyGenerator kg = KeyGenerator.getInstance("DES");
-            kg.init(new SecureRandom());
-            SecretKey key = kg.generateKey();
-            SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
-            Class spec = Class.forName("javax.crypto.spec.DESKeySpec");
-            DESKeySpec ks = (DESKeySpec) skf.getKeySpec(key, spec);
-            ObjectOutputStream oos = new ObjectOutputStream(
-                    Files.newOutputStream(Paths.get("keyfile")));
-            oos.writeObject(ks.getKey());
-
-            Cipher c = Cipher.getInstance("DES/CFB8/NoPadding");
-            c.init(Cipher.ENCRYPT_MODE, key);
-            CipherOutputStream cos = new CipherOutputStream(
-                    Files.newOutputStream(Paths.get("ciphertext")), c);
-            PrintWriter pw = new PrintWriter(
-                    new OutputStreamWriter(cos));
-            pw.println("Stand and unfold yourself");
-            pw.close();
-            oos.writeObject(c.getIV());
-            oos.close();
-        } catch (Exception e) {
-            System.out.println(e);
+            givenString_whenEncrypt_thenSuccess();
+        } catch (InvalidAlgorithmParameterException | IllegalBlockSizeException | NoSuchPaddingException |
+                 NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
         }
     }
+    static void givenString_whenEncrypt_thenSuccess()
+            throws NoSuchAlgorithmException, IllegalBlockSizeException,
+            BadPaddingException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException {
 
-    public static void receive() {
-        try {
-            ObjectInputStream ois = new ObjectInputStream(
-                    Files.newInputStream(Paths.get("keyfile")));
-            DESKeySpec ks = new DESKeySpec((byte[]) ois.readObject());
-            SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
-            SecretKey key = skf.generateSecret(ks);
-
-            Cipher c = Cipher.getInstance("DES/CFB8/NoPadding");
-            c.init(Cipher.DECRYPT_MODE, key,
-                    new IvParameterSpec((byte[]) ois.readObject()));
-            CipherInputStream cis = new CipherInputStream(
-                    Files.newInputStream(Paths.get("ciphertext")), c);
-//            cis.read(new byte[8]);
-            BufferedReader br = new BufferedReader(
-                    new InputStreamReader(cis));
-            System.out.println("Got message");
-            System.out.println(br.readLine());
-        } catch (Exception e) {
-            System.out.println(e);
-        }
+        String password = "testy";
+        String input = new Random().ints(97, 122 + 1)
+                .limit(64)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
+        System.out.println("input:\n" + input);
+        SecretKey key = AESUtil.getKeyFromPassword(password, AESUtil.STANDARD_SALT);
+        IvParameterSpec ivParameterSpec = AESUtil.generateIv();
+        String cipherText = AESUtil.encrypt(input, key, ivParameterSpec);
+        System.out.println("encrypted:\n" + cipherText);
+//        key = AESUtil.getStandardKeyFromPassword(password);
+        String plainText = AESUtil.decrypt(cipherText, key, ivParameterSpec);
+        System.out.println("plaintext:\n" + plainText);
+        System.out.println("success? >> " + input.equals(plainText));
     }
 }
