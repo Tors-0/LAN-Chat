@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 public class NetDataUtil {
     public static final String ONLINE_REQUEST = "onlineUsersRequest";
     public static final String ONLINE_RESPONSE = "onlineUsersResponse";
+    public static final String PASSWORD_WRONG = "passwordFail";
     public static void sendInfoRequest(PrintWriter destination, String data, SecretKey key, IvParameterSpec iv, boolean cryptoActive) {
         data = Identifier.INFO_REQUEST.getKeyString() + data;
         if (cryptoActive) {

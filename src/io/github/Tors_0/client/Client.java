@@ -27,7 +27,10 @@ public class Client {
     static IvParameterSpec cryptoIv;
     static String cryptoPassword;
     static SecretKey cryptoKey;
+    static boolean serverNeedsPass = true;
+    static boolean expectingServerPasswordResponse = false;
     static boolean cryptoActive = false;
+    static boolean isHost = false;
     // end crypto vars
     static JFrame frame;
     static JMenuBar menuBar;
@@ -343,7 +346,8 @@ public class Client {
                         }
 
                         myChatClient.close();
-                        clearCrypto(cryptoPassword, cryptoKey, cryptoIv);
+                        clearCrypto();
+                        isHost = false;
                         connected = false;
 
                         setMainMenu(true); // disconnect
@@ -409,6 +413,7 @@ public class Client {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (validatePortSelection()) return; // cancel on invalid port numbers
+                isHost = false;
                 joinButton.setEnabled(false);
 
                 searchAction.actionPerformed(e);
@@ -429,6 +434,7 @@ public class Client {
                     if (hosts.isEmpty()) {
                         new Thread(() -> {
                             try {
+                                isHost = true;
                                 initializeCrypto();
                                 ChatServer.SERVER.start(port, cryptoPassword, cryptoKey);
                             } catch (IOException ex) {
@@ -442,6 +448,7 @@ public class Client {
                     } else {
                         if (0 == JOptionPane.showConfirmDialog(frame,"Server already exists on this port, would you like to join it?", "Cannot Host", JOptionPane.YES_NO_OPTION)) {
                             setHostname(hosts.get(0));
+                            isHost = false;
                             initializeCrypto();
                             connectAction.actionPerformed(e);
                         }
@@ -468,7 +475,18 @@ public class Client {
      */
     private static void initializeCrypto() {
         try {
-            String userPass = JOptionPane.showInputDialog(frame, "Please input a password for this chat room:");
+            String userPass;
+            if (serverNeedsPass) {
+                userPass = JOptionPane.showInputDialog(frame, "Please input a password");
+                if (userPass == null || userPass.isEmpty()) {
+                    userPass = AESUtil.STANDARD_PASSWORD;
+                }
+                if (!isHost) {
+                    expectServerResponse(userPass);
+                }
+            } else {
+                userPass = AESUtil.STANDARD_PASSWORD;
+            }
             cryptoPassword = userPass;
             cryptoKey = AESUtil.getStandardKeyFromPassword(userPass);
             cryptoIv = AESUtil.generateIv();
@@ -477,11 +495,15 @@ public class Client {
             throw new RuntimeException(e);
         }
     }
-    private static void clearCrypto(String password, SecretKey key, IvParameterSpec iv) {
+    private static void clearCrypto() {
         cryptoActive = false;
-        password = null;
-        key = null;
-        iv = null;
+        cryptoPassword = null;
+        cryptoKey = null;
+        cryptoIv = null;
+    }
+    private static void expectServerResponse(String password) {
+        sendToServerWithDefault(Identifier.MESSAGE, password);
+        expectingServerPasswordResponse = true;
     }
     private static void setupTextArea(boolean notInit) {
         // begin messaging panel
@@ -567,6 +589,13 @@ public class Client {
             throw new RuntimeException(e);
         }
     }
+    public static void sendToServerWithDefault(Identifier type, String msg) {
+        try {
+            myChatClient.sendPacket(type, msg, AESUtil.getStandardKey(), cryptoIv);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Website: <a href="https://michieldemey.be/blog/network-discovery-using-udp-broadcast/">Code Source</a>
@@ -622,18 +651,27 @@ public class Client {
             byte[] recvBuf = new byte[256];
             DatagramPacket receivePacket = new DatagramPacket(recvBuf, recvBuf.length);
             discoveryPort.setSoTimeout(2500);
+            String message;
             do {
                 discoveryPort.receive(receivePacket);
-            } while (!"DISCOVER_FUIFSERVER_RESPONSE".equals(new String(receivePacket.getData()).trim()));
+                message = new String(receivePacket.getData()).trim();
+            } while (
+                    !AESUtil.NO_PASS.equals(message)
+                    && !AESUtil.NEEDS_PASS.equals(message)
+            );
 
             //We have a response
             System.out.println(Client.class.getName() + ">>> Broadcast response from server: " + receivePacket.getAddress().getHostAddress());
 
             //Check if the message is correct
-            String message = new String(receivePacket.getData()).trim();
-            if (message.equals("DISCOVER_FUIFSERVER_RESPONSE")) {
+            message = new String(receivePacket.getData()).trim();
+            if (message.equals(AESUtil.NO_PASS)) {
                 //DO SOMETHING WITH THE SERVER'S IP (for example, store it in your controller)
                 serverIPs.add(receivePacket.getAddress().getHostAddress());
+                serverNeedsPass = false;
+            } else if (message.equals(AESUtil.NEEDS_PASS)) {
+                serverIPs.add(receivePacket.getAddress().getHostAddress());
+                serverNeedsPass = true;
             }
 
             //Close the port!

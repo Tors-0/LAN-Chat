@@ -1,5 +1,7 @@
 package io.github.Tors_0.server;
 
+import io.github.Tors_0.crypto.AESUtil;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -47,7 +49,13 @@ public class DiscoveryThread extends Thread {
                 //See if the packet holds the right command (message)
                 String message = new String(packet.getData()).trim();
                 if (message.equals("DISCOVER_FUIFSERVER_REQUEST")) {
-                    byte[] sendData = "DISCOVER_FUIFSERVER_RESPONSE".getBytes();
+                    byte[] sendData;
+                    if (AESUtil.STANDARD_PASSWORD.equals(ChatServer.cryptoPassword)) {
+                        sendData = AESUtil.NO_PASS.getBytes();
+                    } else {
+                        // tell the client if the server needs a password or not
+                        sendData = AESUtil.NEEDS_PASS.getBytes();
+                    }
 
                     //Send a response
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, packet.getAddress(), packet.getPort());

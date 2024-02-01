@@ -93,15 +93,15 @@ public class ChatServer implements Closeable {
             CLIENT_HANDLERS.get(i).closeClient();
         }
         serverStarted = false;
-        clearCrypto(cryptoPassword, cryptoKey, cryptoIv);
+        clearCrypto();
         serverSocket.close();
         CLIENT_HANDLERS.clear();
     }
-    private static void clearCrypto(String password, SecretKey key, IvParameterSpec iv) {
+    private static void clearCrypto() {
         cryptoActive = false;
-        password = null;
-        key = null;
-        iv = null;
+        cryptoPassword = null;
+        cryptoKey = null;
+        cryptoIv = null;
     }
 
     @Override
@@ -138,6 +138,19 @@ public class ChatServer implements Closeable {
                 throw new RuntimeException(e);
             }
             String msg = "";
+            if (AESUtil.STANDARD_PASSWORD.equals(ChatServer.cryptoPassword)) {
+                try {
+                    String pass = fromClientStream.readLine();
+                    pass = AESUtil.decryptIncoming(pass, AESUtil.STANDARD_KEY);
+                    if (!cryptoPassword.equals(pass)) {
+                        NetDataUtil.sendInfoResponse(toClientWriter, NetDataUtil.PASSWORD_WRONG, AESUtil.getStandardKey(), cryptoIv, cryptoActive);
+                        msg = null;
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
             while (msg != null) {
                 try {
                     msg = fromClientStream.readLine();

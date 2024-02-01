@@ -13,7 +13,20 @@ import java.security.spec.KeySpec;
 import java.util.*;
 
 public class AESUtil {
-    public static final String STANDARD_SALT = String.valueOf(AESUtil.class);
+    public static final String STANDARD_SALT = "String.valueOf(AESUtil.class)";
+    public static final String STANDARD_PASSWORD = String.valueOf(AESUtil.class);
+    public static final SecretKey STANDARD_KEY;
+    public static final String NEEDS_PASS = "DISCOVER_AES_SERVER_RESPONSE";
+    public static final String NO_PASS = "DISCOVER_FUIFSERVER_RESPONSE";
+
+    static {
+        try {
+            STANDARD_KEY = getKeyFromPassword(STANDARD_PASSWORD, STANDARD_SALT);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static final String ALG = "AES/CBC/PKCS5Padding";
     public static SecretKey generateKey(int n) throws NoSuchAlgorithmException {
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
@@ -32,6 +45,9 @@ public class AESUtil {
     public static SecretKey getStandardKeyFromPassword(String password)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         return getKeyFromPassword(password, STANDARD_SALT);
+    }
+    public static SecretKey getStandardKey() {
+        return STANDARD_KEY;
     }
     public static IvParameterSpec generateIv() {
         byte[] iv = new byte[16];
