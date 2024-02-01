@@ -80,15 +80,6 @@ public class ChatServer implements Closeable {
         this.CLIENT_HANDLERS.remove(handler);
     }
     public void distributeMsg(String msg) {
-//        if (cryptoActive) {
-//            try {
-//                msg = AESUtil.encryptOutgoing(msg, cryptoKey, cryptoIv);
-//            } catch (Exception e) {
-//                throw new RuntimeException(e);
-//            }
-//        } else {
-//            throw new RuntimeException(new CryptoInactiveException());
-//        }
         synchronized (CLIENT_HANDLERS_LOCK) {
             for (ChatClientHandler clientHandler : CLIENT_HANDLERS) {
                 clientHandler.sendMsg(msg);
@@ -150,6 +141,15 @@ public class ChatServer implements Closeable {
             while (msg != null) {
                 try {
                     msg = fromClientStream.readLine();
+                    if (msg == null) {
+                        synchronized (SERVER.CLIENT_HANDLERS_LOCK) {
+                            SERVER.removeClient(this);
+                        }
+                        msg = String.format("%s disconnected%n", clientID);
+                        System.out.print(msg);
+                        SERVER.distributeMsg(msg);
+                        break;
+                    }
                     if (cryptoActive) {
                         msg = AESUtil.decryptIncoming(msg, cryptoKey).trim();
                     } else {
@@ -165,14 +165,6 @@ public class ChatServer implements Closeable {
                     } else if (msg.startsWith(NetDataUtil.Identifier.INFO_REQUEST.getKeyString())) {
                         answerInfoRequest(msg);
                     }
-                } else if (msg == null) {
-                    synchronized (SERVER.CLIENT_HANDLERS_LOCK) {
-                        SERVER.removeClient(this);
-                    }
-                    msg = String.format("%s disconnected%n", clientID);
-                    System.out.print(msg);
-                    SERVER.distributeMsg(msg);
-                    break;
                 }
             }
         }
