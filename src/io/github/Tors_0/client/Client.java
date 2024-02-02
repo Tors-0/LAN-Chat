@@ -1,9 +1,12 @@
 package io.github.Tors_0.client;
 
+import io.github.Tors_0.crypto.AESUtil;
 import io.github.Tors_0.server.ChatServer;
 import io.github.Tors_0.util.*;
 import io.github.Tors_0.util.NetDataUtil.Identifier;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
@@ -12,12 +15,23 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 
 public class Client {
-    static ChatClient myNetCon = new ChatClient();
+    static ChatClient myChatClient = new ChatClient();
+    // crypto vars
+    static IvParameterSpec cryptoIv;
+    static String cryptoPassword;
+    static SecretKey cryptoKey;
+    static boolean serverNeedsPass = true;
+    static boolean expectingServerPasswordResponse = false;
+    static boolean cryptoActive = false;
+    static boolean isHost = false;
+    // end crypto vars
     static JFrame frame;
     static JMenuBar menuBar;
     static JMenu commandMenu;
@@ -33,6 +47,7 @@ public class Client {
     static int port;
     static final boolean IS_MAC = SystemInfo.isMac();
     static final boolean IS_LINUX = SystemInfo.isLinux();
+    static final boolean IS_WINDOWS = SystemInfo.isWindows();
     public static int getPort() {
         return port;
     }
@@ -297,6 +312,10 @@ public class Client {
             contentPane.setBackground(Color.darkGray);
             frame.setBackground(Color.darkGray);
         }
+        // Windows sets the background as white even with dark theme enabled
+        if (IS_WINDOWS) {
+            textArea.setForeground(Color.black);
+        }
 
 
         frame.pack();
@@ -331,7 +350,9 @@ public class Client {
                             ChatServer.SERVER.stop();
                         }
 
-                        myNetCon.close();
+                        myChatClient.close();
+                        clearCrypto();
+                        isHost = false;
                         connected = false;
 
                         setMainMenu(true); // disconnect
@@ -342,13 +363,18 @@ public class Client {
                 } else {
                     if (hostname == null || hostname.replaceAll(" ","").isEmpty() || port < 1) return;
                     try {
-                        myNetCon.startConnection(hostname, port);
+                        myChatClient.startConnection(hostname, port);
 
                         setMainMenu(false); // connect
 
                         connected = true;
+                        if (!cryptoActive) {
+                            initializeCrypto(); // join remote host
+                        }
+
                         disconnectButton.setText((ChatServer.isServerStarted() ? "Stop Server and " : "") + DISCONNECT);
                         textArea.setText("Connected to " + hostname + " on port " + port);
+                        addText("Use \"/help\" to get a list of valid commands from the server");
                         if (nickname != null) {
                             sendToServer(Identifier.MESSAGE, "/nickname " + nickname);
                         }
@@ -392,6 +418,7 @@ public class Client {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (validatePortSelection()) return; // cancel on invalid port numbers
+                isHost = false;
                 joinButton.setEnabled(false);
 
                 searchAction.actionPerformed(e);
@@ -412,7 +439,9 @@ public class Client {
                     if (hosts.isEmpty()) {
                         new Thread(() -> {
                             try {
-                                ChatServer.SERVER.start();
+                                isHost = true;
+                                initializeCrypto(); // start local host
+                                ChatServer.SERVER.start(port, cryptoPassword, cryptoKey);
                             } catch (IOException ex) {
                                 if (!ex.getClass().equals(SocketException.class)) {
                                     JOptionPane.showMessageDialog(frame, ex.toString(), "Server Error", JOptionPane.ERROR_MESSAGE);
@@ -424,6 +453,8 @@ public class Client {
                     } else {
                         if (0 == JOptionPane.showConfirmDialog(frame,"Server already exists on this port, would you like to join it?", "Cannot Host", JOptionPane.YES_NO_OPTION)) {
                             setHostname(hosts.get(0));
+                            isHost = false;
+                            initializeCrypto(); // found conflicting host
                             connectAction.actionPerformed(e);
                         }
                     }
@@ -444,6 +475,41 @@ public class Client {
         System.exit(0);
     }
 
+    /**
+     * get password by user input
+     */
+    private static void initializeCrypto() {
+        try {
+            String userPass;
+            if (serverNeedsPass) {
+                userPass = JOptionPane.showInputDialog(frame, "Please input a password (or press cancel for no password):");
+                if (userPass == null || userPass.isEmpty()) {
+                    userPass = AESUtil.STANDARD_PASSWORD;
+                }
+            } else {
+                userPass = AESUtil.STANDARD_PASSWORD;
+            }
+            cryptoPassword = userPass;
+            cryptoKey = AESUtil.getStandardKeyFromPassword(userPass);
+            cryptoIv = AESUtil.generateIv();
+            cryptoActive = true;
+            if (serverNeedsPass && !isHost) {
+                expectServerResponse(userPass);
+            }
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private static void clearCrypto() {
+        cryptoActive = false;
+        cryptoPassword = null;
+        cryptoKey = null;
+        cryptoIv = null;
+    }
+    private static void expectServerResponse(String password) {
+        sendToServerWithDefault(Identifier.MESSAGE, password);
+        expectingServerPasswordResponse = true;
+    }
     private static void setupTextArea(boolean notInit) {
         // begin messaging panel
         textArea = new JTextArea();
@@ -523,9 +589,16 @@ public class Client {
 
     public static void sendToServer(Identifier type, String msg) {
         try {
-            myNetCon.sendPacket(type, msg);
+            myChatClient.sendPacket(type, msg, cryptoKey, cryptoIv);
         } catch (Exception e) {
-            System.out.println("sTS(String) got exception: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+    public static void sendToServerWithDefault(Identifier type, String msg) {
+        try {
+            myChatClient.sendPacket(type, msg, AESUtil.getStandardKey(), cryptoIv);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -583,18 +656,27 @@ public class Client {
             byte[] recvBuf = new byte[256];
             DatagramPacket receivePacket = new DatagramPacket(recvBuf, recvBuf.length);
             discoveryPort.setSoTimeout(2500);
+            String message;
             do {
                 discoveryPort.receive(receivePacket);
-            } while (!"DISCOVER_FUIFSERVER_RESPONSE".equals(new String(receivePacket.getData()).trim()));
+                message = new String(receivePacket.getData()).trim();
+            } while (
+                    !AESUtil.NO_PASS.equals(message)
+                    && !AESUtil.NEEDS_PASS.equals(message)
+            );
 
             //We have a response
             System.out.println(Client.class.getName() + ">>> Broadcast response from server: " + receivePacket.getAddress().getHostAddress());
 
             //Check if the message is correct
-            String message = new String(receivePacket.getData()).trim();
-            if (message.equals("DISCOVER_FUIFSERVER_RESPONSE")) {
+            message = new String(receivePacket.getData()).trim();
+            if (message.equals(AESUtil.NO_PASS)) {
                 //DO SOMETHING WITH THE SERVER'S IP (for example, store it in your controller)
                 serverIPs.add(receivePacket.getAddress().getHostAddress());
+                serverNeedsPass = false;
+            } else if (message.equals(AESUtil.NEEDS_PASS)) {
+                serverIPs.add(receivePacket.getAddress().getHostAddress());
+                serverNeedsPass = true;
             }
 
             //Close the port!
@@ -616,7 +698,7 @@ public class Client {
             ChatServer.SERVER.stop();
         }
         if (connected) {
-            myNetCon.close();
+            myChatClient.close();
         }
     }
 }

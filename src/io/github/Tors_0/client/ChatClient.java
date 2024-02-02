@@ -1,12 +1,22 @@
 package io.github.Tors_0.client;
 
+import io.github.Tors_0.crypto.AESUtil;
+import io.github.Tors_0.crypto.CryptoInactiveException;
 import io.github.Tors_0.util.NetDataUtil;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.swing.*;
 import java.applet.Applet;
 import java.applet.AudioClip;
 import java.io.*;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 public class ChatClient implements Closeable {
@@ -24,13 +34,13 @@ public class ChatClient implements Closeable {
         worker = new PrintInputStream(in);
         worker.start();
     }
-    public void sendPacket(NetDataUtil.Identifier type, String msg) {
+    public void sendPacket(NetDataUtil.Identifier type, String msg, SecretKey key, IvParameterSpec iv) {
         switch (type) {
             case MESSAGE:
-                NetDataUtil.sendMessage(toServerWriter, msg);
+                NetDataUtil.sendMessage(toServerWriter, msg, key, iv, Client.cryptoActive);
                 break;
             case INFO_REQUEST:
-                NetDataUtil.sendInfoRequest(toServerWriter, msg);
+                NetDataUtil.sendInfoRequest(toServerWriter, msg, key, iv, Client.cryptoActive);
                 break;
         }
     }
@@ -56,7 +66,17 @@ public class ChatClient implements Closeable {
                 if (interrupted()) break;
                 try {
                     msg = in.readLine();
-                } catch (IOException ignored) {
+                    if (Client.cryptoActive) {
+                        if (Client.expectingServerPasswordResponse) {
+                            msg = AESUtil.decryptIncoming(msg, AESUtil.STANDARD_KEY).trim();
+                            Client.expectingServerPasswordResponse = false;
+                        } else {
+                           msg = AESUtil.decryptIncoming(msg, Client.cryptoKey).trim();
+                        }
+                    } else {
+                        throw new RuntimeException(new CryptoInactiveException());
+                    }
+                } catch (Exception e) {
                     msg = null;
                 }
                 if (msg != null && !msg.isEmpty()) {
@@ -75,7 +95,7 @@ public class ChatClient implements Closeable {
                             } else {
                                 // for Windows and Mac, we use the native notifications :o
                                 SysTrayToast.display(msg);
-                                // don't make a little noise because Windows has one already :(
+                                // don't make a little noise because they have one already :(
                             }
                         }
                     } else if (msg.startsWith(NetDataUtil.Identifier.INFO_RESPONSE.getKeyString())) {
@@ -85,10 +105,17 @@ public class ChatClient implements Closeable {
                             Client.usersSubMenu.removeAll();
                             Arrays.stream(data.split(","))
                                     .forEach(user -> Client.usersSubMenu.add(user));
+                        } else if (data.startsWith(NetDataUtil.PASSWORD_WRONG)) {
+                            Client.showAlertMessage("Wrong Password","Connect Failed", JOptionPane.INFORMATION_MESSAGE);
+                            Client.getConnectAction().actionPerformed(null);
+                            break;
+                        } else if (data.startsWith(NetDataUtil.PASSWORD_RIGHT)) {
+                            // non blocking alert message
+                            new Thread(() -> Client.showAlertMessage("Password accepted","Connected", JOptionPane.INFORMATION_MESSAGE));
                         }
                     }
                     if ("Server closed".equals(msg)) {
-                        Client.showAlertMessage("Server stopped by host","Disconnected", JOptionPane.INFORMATION_MESSAGE);
+                        Client.showAlertMessage("Server closed by host","Disconnected", JOptionPane.INFORMATION_MESSAGE);
                         Client.getConnectAction().actionPerformed(null);
                         break;
                     }

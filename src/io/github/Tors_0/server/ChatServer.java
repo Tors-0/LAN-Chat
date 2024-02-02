@@ -1,8 +1,12 @@
 package io.github.Tors_0.server;
 
 import io.github.Tors_0.client.Client;
+import io.github.Tors_0.crypto.AESUtil;
+import io.github.Tors_0.crypto.CryptoInactiveException;
 import io.github.Tors_0.util.NetDataUtil;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.swing.*;
 import java.io.*;
 import java.net.ServerSocket;
@@ -13,6 +17,12 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ChatServer implements Closeable {
     public static final ChatServer SERVER = new ChatServer();
+    // crypto vars
+    static IvParameterSpec cryptoIv;
+    static String cryptoPassword;
+    static SecretKey cryptoKey;
+    static boolean cryptoActive = false;
+    // end crypto vars
     private ServerSocket serverSocket;
     private final ArrayList<ChatClientHandler> CLIENT_HANDLERS = new ArrayList<>();
     private final ReentrantLock CLIENT_HANDLERS_LOCK = new ReentrantLock();
@@ -28,19 +38,24 @@ public class ChatServer implements Closeable {
     }
     static final int maxNicknameLength = 20;
     static final int minNicknameLength = 3;
-    public void start() throws IOException {
-        ChatServer.port = Client.getPort();
-        serverSocket = new ServerSocket(port);
-        System.out.println("Server started on port " + port);
+    public void start(int port, String password, SecretKey key) throws IOException {
+        cryptoPassword = password;
+        cryptoKey = key;
+        cryptoIv = AESUtil.generateIv();
+        cryptoActive = true;
+
+        ChatServer.port = port;
+        serverSocket = new ServerSocket(ChatServer.port);
+        System.out.println("Server started on port " + ChatServer.port);
         discoveryThread = new DiscoveryThread();
         discoveryThread.start();
-        System.out.println("Listening for clients on port " + port);
+        System.out.println("Listening for clients on port " + ChatServer.port);
         int currentClient = 0;
         Client.setHostname("127.0.0.1");
         serverStarted = true;
         Client.getConnectAction().actionPerformed(null);
         new Thread(() -> {
-            Client.showAlertMessage("Server started on port " + port,"Success",JOptionPane.INFORMATION_MESSAGE);
+            Client.showAlertMessage("Server started on port " + ChatServer.port,"Success",JOptionPane.INFORMATION_MESSAGE);
         }).start();
         while (true) { // start the server loop, grab all incoming clients and give them a handler
             Socket clientSocket = serverSocket.accept();
@@ -72,8 +87,17 @@ public class ChatServer implements Closeable {
             CLIENT_HANDLERS.get(i).closeClient();
         }
         serverStarted = false;
+        clearCrypto();
         serverSocket.close();
         CLIENT_HANDLERS.clear();
+        IP_NAME_MAP.clear();
+        port = 0;
+    }
+    private static void clearCrypto() {
+        cryptoActive = false;
+        cryptoPassword = null;
+        cryptoKey = null;
+        cryptoIv = null;
     }
 
     @Override
@@ -109,29 +133,49 @@ public class ChatServer implements Closeable {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            toClientWriter.println("Use \"/help\" to get a list of valid commands from the server");
             String msg = "";
+            if (!AESUtil.STANDARD_PASSWORD.equals(ChatServer.cryptoPassword) && SERVER.CLIENT_HANDLERS.indexOf(this) != 0) {
+                try {
+                    String pass = fromClientStream.readLine();
+                    pass = AESUtil.decryptIncoming(pass, AESUtil.STANDARD_KEY)
+                            .substring(NetDataUtil.Identifier.MESSAGE.getKeyString().length()); // trim off the message header
+                    if (!cryptoPassword.equals(pass)) {
+                        NetDataUtil.sendInfoResponse(toClientWriter, NetDataUtil.PASSWORD_WRONG, AESUtil.getStandardKey(), cryptoIv, cryptoActive);
+                        msg = null;
+                    } else {
+                        NetDataUtil.sendInfoResponse(toClientWriter, NetDataUtil.PASSWORD_RIGHT, AESUtil.getStandardKey(), cryptoIv, cryptoActive);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
             while (msg != null) {
                 try {
-                    msg = fromClientStream.readLine().trim();
-                } catch (IOException | NullPointerException e) {
+                    msg = fromClientStream.readLine();
+                    if (msg == null) {
+                        synchronized (SERVER.CLIENT_HANDLERS_LOCK) {
+                            SERVER.removeClient(this);
+                        }
+                        msg = String.format("%s disconnected%n", clientID);
+                        System.out.print(msg);
+                        SERVER.distributeMsg(msg);
+                        break;
+                    }
+                    if (cryptoActive) {
+                        msg = AESUtil.decryptIncoming(msg, cryptoKey).trim();
+                    } else {
+                        throw new RuntimeException(new CryptoInactiveException());
+                    }
+                } catch (Exception e) {
                     msg = null;
+                    throw new RuntimeException(e);
                 }
-
                 if (msg != null && !msg.substring(10).isEmpty()) {
                     if (msg.startsWith(NetDataUtil.Identifier.MESSAGE.getKeyString())) {
                         doMessageAction(msg);
                     } else if (msg.startsWith(NetDataUtil.Identifier.INFO_REQUEST.getKeyString())) {
                         answerInfoRequest(msg);
                     }
-                } else if (msg == null) {
-                    synchronized (SERVER.CLIENT_HANDLERS_LOCK) {
-                        SERVER.removeClient(this);
-                    }
-                    msg = String.format("%s disconnected%n", clientID);
-                    System.out.print(msg);
-                    SERVER.distributeMsg(msg);
-                    break;
                 }
             }
         }
@@ -140,14 +184,14 @@ public class ChatServer implements Closeable {
             if (text.startsWith("/help")) {
                 toClientWriter.println("Valid server commands:");
                 commandRegistry.forEach((com,desc) -> {
-                    NetDataUtil.sendMessage(toClientWriter, String.format("\"%s\" -> %s%n", com, desc));
+                    NetDataUtil.sendMessage(toClientWriter, String.format("\"%s\" -> %s%n", com, desc), cryptoKey, cryptoIv, cryptoActive);
                 });
-                NetDataUtil.sendMessage(toClientWriter, "\n");
+                NetDataUtil.sendMessage(toClientWriter, "\n", cryptoKey, cryptoIv, cryptoActive);
             } else if (text.startsWith("/nickname")) {
                 String newName = text.substring(9).trim().replaceAll(",","");
                 if (!newName.isEmpty()) {
                     if (SERVER.IP_NAME_MAP.containsValue(newName.toLowerCase()) && !newName.equalsIgnoreCase(SERVER.IP_NAME_MAP.get(CLIENT_IP))) {
-                        NetDataUtil.sendMessage(toClientWriter, String.format("Nickname \"%s\" already taken on this server%n", newName));
+                        NetDataUtil.sendMessage(toClientWriter, String.format("Nickname \"%s\" already taken on this server%n", newName), cryptoKey, cryptoIv, cryptoActive);
                     } else if (3 <= newName.length() && newName.length() <= ChatServer.maxNicknameLength) {
                         if (sentJoinMsg) {
                             SERVER.distributeMsg(clientID + " changed nickname to " + newName);
@@ -158,13 +202,15 @@ public class ChatServer implements Closeable {
                         clientID = newName;
                         SERVER.IP_NAME_MAP.put(CLIENT_IP,clientID.toLowerCase());
                     } else {
-                        NetDataUtil.sendMessage(toClientWriter, "Nickname wrong length. Min: " + ChatServer.minNicknameLength + " Max: " + ChatServer.maxNicknameLength);
+                        NetDataUtil.sendMessage(toClientWriter,
+                                "Nickname wrong length. Min: " + ChatServer.minNicknameLength + " Max: " + ChatServer.maxNicknameLength,
+                                cryptoKey, cryptoIv, cryptoActive);
                     }
                 } else {
-                    NetDataUtil.sendMessage(toClientWriter, "Nickname must not be blank...");
+                    NetDataUtil.sendMessage(toClientWriter, "Nickname must not be blank...", cryptoKey, cryptoIv, cryptoActive);
                 }
             } else if (text.startsWith("/")) {
-                NetDataUtil.sendMessage(toClientWriter, "Invalid command...");
+                NetDataUtil.sendMessage(toClientWriter, "Invalid command...", cryptoKey, cryptoIv, cryptoActive);
             } else {
                 if (!sentJoinMsg) {
                     sentJoinMsg = true;
@@ -183,7 +229,7 @@ public class ChatServer implements Closeable {
                 SERVER.CLIENT_HANDLERS.forEach(handler -> {
                     data.append(handler.getClientID() + ",");
                 });
-                NetDataUtil.sendInfoResponse(toClientWriter, data.toString());
+                NetDataUtil.sendInfoResponse(toClientWriter, data.toString(), cryptoKey, cryptoIv, cryptoActive);
             }
         }
         public void closeClient() {
@@ -196,7 +242,7 @@ public class ChatServer implements Closeable {
             }
         }
         public void sendMsg(String msg) {
-            NetDataUtil.sendMessage(toClientWriter, msg);
+            NetDataUtil.sendMessage(toClientWriter, msg, cryptoKey, cryptoIv, cryptoActive);
         }
     }
 }
