@@ -109,10 +109,15 @@ public class ChatClient implements Closeable {
                             Client.showAlertMessage("Wrong Password","Connect Failed", JOptionPane.INFORMATION_MESSAGE);
                             Client.getConnectAction().actionPerformed(null);
                             break;
+                        } else if (data.startsWith(NetDataUtil.PASSWORD_RIGHT)) {
+                            // non blocking alert message
+                            new Thread(() -> Client.showAlertMessage("Password accepted","Connected", JOptionPane.INFORMATION_MESSAGE));
                         }
                     }
                     if ("Server closed".equals(msg)) {
-
+                        Client.showAlertMessage("Server closed by host","Disconnected", JOptionPane.INFORMATION_MESSAGE);
+                        Client.getConnectAction().actionPerformed(null);
+                        break;
                     }
                 }
             }

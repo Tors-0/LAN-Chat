@@ -142,10 +142,12 @@ public class ChatServer implements Closeable {
                 try {
                     String pass = fromClientStream.readLine();
                     pass = AESUtil.decryptIncoming(pass, AESUtil.STANDARD_KEY)
-                            .substring(NetDataUtil.Identifier.MESSAGE.getKeyString().length());
+                            .substring(NetDataUtil.Identifier.MESSAGE.getKeyString().length()); // trim off the message header
                     if (!cryptoPassword.equals(pass)) {
                         NetDataUtil.sendInfoResponse(toClientWriter, NetDataUtil.PASSWORD_WRONG, AESUtil.getStandardKey(), cryptoIv, cryptoActive);
                         msg = null;
+                    } else {
+                        NetDataUtil.sendInfoResponse(toClientWriter, NetDataUtil.PASSWORD_RIGHT, AESUtil.getStandardKey(), cryptoIv, cryptoActive);
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
