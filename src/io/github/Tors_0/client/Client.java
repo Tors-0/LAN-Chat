@@ -47,6 +47,7 @@ public class Client {
     static int port;
     static final boolean IS_MAC = SystemInfo.isMac();
     static final boolean IS_LINUX = SystemInfo.isLinux();
+    static final boolean IS_WINDOWS = SystemInfo.isWindows();
     public static int getPort() {
         return port;
     }
@@ -310,6 +311,10 @@ public class Client {
             colorComponents(centeredPanel);
             contentPane.setBackground(Color.darkGray);
             frame.setBackground(Color.darkGray);
+        }
+        // Windows sets the background as white even with dark theme enabled
+        if (IS_WINDOWS) {
+            textArea.setForeground(Color.black);
         }
 
 
