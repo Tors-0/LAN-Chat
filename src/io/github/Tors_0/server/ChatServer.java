@@ -90,6 +90,8 @@ public class ChatServer implements Closeable {
         clearCrypto();
         serverSocket.close();
         CLIENT_HANDLERS.clear();
+        IP_NAME_MAP.clear();
+        port = 0;
     }
     private static void clearCrypto() {
         cryptoActive = false;
