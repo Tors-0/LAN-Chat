@@ -477,7 +477,7 @@ public class Client {
         try {
             String userPass;
             if (serverNeedsPass) {
-                userPass = JOptionPane.showInputDialog(frame, "Please input a password");
+                userPass = JOptionPane.showInputDialog(frame, "Please input a password (or press cancel for no password):");
                 if (userPass == null || userPass.isEmpty()) {
                     userPass = AESUtil.STANDARD_PASSWORD;
                 }
