@@ -264,7 +264,7 @@ public class Client {
         configPane.add(hostLabel);
         configPane.add(Box.createRigidArea(new Dimension(5,0)));
         configPane.add(disconnectButton);
-        if (IS_LINUX) { // add notification sound mute button for linux computers
+        if (IS_LINUX || IS_MAC) { // add notification sound mute button for linux computers
             JToggleButton soundToggle = new JToggleButton("Sound: ON");
             soundToggle.setFont(Fonts.m5x7(20));
             soundToggle.addActionListener(new AbstractAction() {
