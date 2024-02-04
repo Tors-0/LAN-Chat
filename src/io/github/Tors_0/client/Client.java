@@ -38,6 +38,8 @@ public class Client {
     static JMenu usersMenu;
     static JMenu usersSubMenu;
     static JMenu creditsMenu;
+    static JMenu helpMenu;
+    static URL issueURL;
     private static boolean useFallbackTheme = false;
     static final Image IMAGE = Toolkit.getDefaultToolkit().createImage(SysTrayToast.class.getResource("/io/github/Tors_0/resources/lanchat.png"));
     static JTextField msgField;
@@ -190,10 +192,32 @@ public class Client {
         creditsMenu.add(credits);
 
         // end credits menu
+        // help menu
+
+        helpMenu = new JMenu("Help");
+
+        JMenuItem issueItem = new JMenuItem("Report Issue");
+        try {
+            issueURL = new  URL("https://github.com/Tors-0/LAN-Chat/issues/new/choose");
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        issueItem.addActionListener(e -> {
+            try {
+                Desktop.getDesktop().browse(issueURL.toURI()); // open the GitHub issues page
+            } catch (IOException | URISyntaxException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+
+        helpMenu.add(issueItem);
+
+        // end help menu
 
         menuBar.add(commandMenu);
         menuBar.add(usersMenu);
         menuBar.add(creditsMenu);
+        menuBar.add(helpMenu);
         Arrays.stream(menuBar.getComponents()).forEach(menu -> menu.setFont(Fonts.m3x6(24)));
 
         frame.setJMenuBar(menuBar);
