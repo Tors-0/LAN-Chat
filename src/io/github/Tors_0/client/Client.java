@@ -349,6 +349,10 @@ public class Client {
         menuPane.setVisible(true);
         contentPane.setVisible(true);
 
+        // TODO 2024.02.04: fix this janky mess and figure out a better way to refresh the frame
+        frame.setSize(frame.getWidth()+1,frame.getHeight());
+        frame.setSize(frame.getWidth()-1,frame.getHeight());
+
         Action msgAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -538,7 +542,13 @@ public class Client {
         // begin messaging panel
         textArea = new JTextArea();
         textArea.setFont(Fonts.m5x7(20));
-        textArea.setForeground(Color.white);
+        if (useFallbackTheme) {
+            textArea.setForeground(Color.white);
+        }
+//        // Windows sets the background as white even with dark theme enabled
+//        if (IS_WINDOWS || IS_MAC) {
+//            textArea.setForeground(Color.black);
+//        }
         textArea.setRows(14);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
