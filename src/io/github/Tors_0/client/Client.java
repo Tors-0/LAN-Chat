@@ -337,7 +337,7 @@ public class Client {
             frame.setBackground(Color.darkGray);
         }
         // Windows sets the background as white even with dark theme enabled
-        if (IS_WINDOWS) {
+        if (IS_WINDOWS || IS_MAC) {
             textArea.setForeground(Color.black);
         }
 

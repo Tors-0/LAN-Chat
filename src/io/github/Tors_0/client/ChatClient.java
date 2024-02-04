@@ -95,7 +95,11 @@ public class ChatClient implements Closeable {
                             } else {
                                 // for Windows and Mac, we use the native notifications :o
                                 SysTrayToast.display(msg);
-                                // don't make a little noise because they have one already :(
+                                // don't make a little noise because windows has one already :(
+                                // but mac doesn't so we make the sound
+                                if (Client.IS_MAC) {
+                                    PlaySound.playNotifySound();
+                                }
                             }
                         }
                     } else if (msg.startsWith(NetDataUtil.Identifier.INFO_RESPONSE.getKeyString())) {
